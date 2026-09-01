@@ -56,6 +56,18 @@
   .review { padding:8px 0; border-top:1px solid var(--line); font-size:14px; }
   .review b { color:var(--y); text-shadow:0 0 1px #999; }
   .hidden { display:none; }
+  .order { padding:12px 0; border-top:1px solid var(--line); }
+  .order .top { display:flex; justify-content:space-between; align-items:flex-start; gap:8px; }
+  .order .who { font-weight:900; }
+  .order .sub { font-size:14px; }
+  .order .memo { font-size:13px; color:var(--red); }
+  .order .ph { font-size:12px; color:var(--grey); }
+  .st { padding:2px 7px; font-size:11px; font-weight:900; border-radius:2px; white-space:nowrap; background:#E9E9E9; }
+  .st.paid { background:var(--y); } .st.done { background:var(--ink); color:var(--y); }
+  .acts { display:flex; gap:8px; margin-top:8px; }
+  .acts button { flex:1; padding:10px; border:0; border-radius:6px; font-weight:900; font-size:14px; background:var(--ink); color:var(--y); }
+  .acts button.ghost { background:#fff; color:var(--ink); border:2px solid var(--ink); }
+  .acts button:disabled { opacity:.4; }
 </style>
 </head>
 <body>
@@ -68,6 +80,7 @@
   <nav>
     <button class="on" data-v="order">주문</button>
     <button data-v="track">내 주문 확인</button>
+    <button data-v="admin">관리자</button>
   </nav>
   <main>
     <!-- 주문 -->
@@ -114,6 +127,23 @@
         <p id="q-thanks" class="hidden" style="font-weight:700;margin-top:12px">후기 감사해요. 아빠한테 자랑할게요.</p>
       </div>
     </section>
+
+    <!-- 관리자 -->
+    <section id="v-admin" class="hidden">
+      <div id="a-login">
+        <h2>관리자</h2>
+        <label><span>비밀번호</span><input id="a-pin" type="password" inputmode="numeric"></label>
+        <button class="btn" id="a-enter">들어가기</button>
+        <p class="err hidden" id="a-err"></p>
+      </div>
+      <div id="a-panel" class="hidden">
+        <label><span>회차</span><input id="a-batch" type="date"></label>
+        <button class="btn ghost" id="a-load">불러오기</button>
+        <div id="a-summary" class="card hidden" style="margin-top:16px"></div>
+        <div id="a-list"></div>
+        <button class="btn ghost hidden" id="a-copy" style="margin-top:12px">포장 리스트 복사 (아빠 카톡용)</button>
+      </div>
+    </section>
   </main>
 </div>
 
@@ -126,7 +156,10 @@ const CONFIG = {
     order:  "https://hook.us2.make.com/fp92uiwugijwq8tsqbwvzya8hgylmxyv",
     review: "https://hook.us2.make.com/a7wpkf8ourmie2y29fkl61yk3biazu1r",
     lookup: "https://hook.us2.make.com/72ouc86g1eus5v2yim6tas8ncqip2cib",
+    adminList: "https://hook.us2.make.com/1vqiu1h0djvu4x23fa3kgospq7h9cjwj",
+    setStatus: "https://hook.us2.make.com/55ely21ikewr6nkdyttu4h5xxgty532v",
   },
+  // 관리자 비밀번호 — Make 시나리오 5·6의 필터 값과 같아야 함 (기본 2580)
 };
 // 품목 — 시트 Products 탭과 같게 유지 (품목명은 반드시 동일해야 집계됨)
 const PRODUCTS = [
@@ -220,7 +253,7 @@ $("#again").addEventListener("click", () => { qty = {}; ["#f-name","#f-phone","#
 /* 탭 */
 document.querySelectorAll("nav button").forEach(b => b.addEventListener("click", () => {
   document.querySelectorAll("nav button").forEach(x => x.classList.remove("on")); b.classList.add("on");
-  ["order","done","track"].forEach(v => $("#v-"+v).classList.add("hidden"));
+  ["order","done","track","admin"].forEach(v => $("#v-"+v).classList.add("hidden"));
   $("#v-" + b.dataset.v).classList.remove("hidden");
 }));
 
@@ -255,7 +288,75 @@ $("#r-send").addEventListener("click", async () => {
   catch (e) { alert("후기 전송이 안 됐어요. 다시 시도해 주세요."); $("#r-send").disabled = false; }
 });
 
+
+/* ===== 관리자 ===== */
+let PIN = "", A = [];
+const todayStr = () => ds(kst());
+$("#a-batch").value = B.batch;
+$("#a-enter").addEventListener("click", async () => {
+  PIN = $("#a-pin").value.trim(); $("#a-err").classList.add("hidden");
+  const ok = await loadAdmin();
+  if (ok) { $("#a-login").classList.add("hidden"); $("#a-panel").classList.remove("hidden"); }
+  else { $("#a-err").textContent = "비밀번호가 다르거나 불러오지 못했어요."; $("#a-err").classList.remove("hidden"); }
+});
+$("#a-load").addEventListener("click", loadAdmin);
+async function loadAdmin() {
+  try {
+    const r = await post(CONFIG.hook.adminList, { pin: PIN, batch: $("#a-batch").value });
+    const rows = await r.json();
+    if (!Array.isArray(rows)) return false;
+    A = rows; renderAdmin(); return true;
+  } catch (e) { return false; }
+}
+function groupOrders(rows) {
+  const g = {};
+  rows.forEach(x => { (g[x.no] ||= { no:x.no, name:x.name, unit:x.unit, phone:x.phone, memo:x.memo, items:[], total:0, statuses:[] });
+    g[x.no].items.push(`${x.item} ×${x.qty}`); g[x.no].total += Number(x.amount||0); g[x.no].statuses.push(x.status); });
+  return Object.values(g).map(o => ({ ...o, status: o.statuses.every(s=>s==="전달") ? "전달" : o.statuses.some(s=>s==="입금"||s==="전달") ? "입금" : "접수" }));
+}
+function packingText() {
+  const paid = A.filter(x => x.status === "입금" || x.status === "전달");
+  const agg = {}; paid.forEach(x => agg[x.item] = (agg[x.item]||0) + Number(x.qty||0));
+  const orders = groupOrders(A).filter(o => o.status !== "접수").sort((a,b)=>a.unit.localeCompare(b.unit,"ko"));
+  return `[청정한우 사다드림 ${$("#a-batch").value}]\n▶ 포장 리스트\n` + (Object.entries(agg).map(([k,v])=>`- ${k} ${v}팩`).join("\n") || "- 없음")
+    + `\n\n▶ 전달 순서\n` + (orders.map(o=>`${o.unit} ${o.name} (${o.items.join(", ")})${o.memo?" *"+o.memo:""}`).join("\n") || "- 없음");
+}
+function renderAdmin() {
+  const orders = groupOrders(A);
+  const paid = orders.filter(o=>o.status!=="접수");
+  const agg = {}; A.filter(x=>x.status!=="접수").forEach(x => agg[x.item]=(agg[x.item]||0)+Number(x.qty||0));
+  $("#a-summary").classList.remove("hidden");
+  $("#a-summary").innerHTML = `<small>접수 ${orders.length}건 · 입금확인 ${paid.length}건 · 매출 ${won(paid.reduce((s,o)=>s+o.total,0))}</small>
+    <div style="font-weight:900;margin-top:6px">${Object.entries(agg).map(([k,v])=>`${k} <b>${v}팩</b>`).join("<br>") || "입금확인된 주문 없음"}</div>`;
+  $("#a-copy").classList.toggle("hidden", !A.length);
+  $("#a-list").innerHTML = orders.length ? orders.map(o => `
+    <div class="order">
+      <div class="top"><div>
+        <div class="who">${o.unit} ${o.name} <span class="ph">${o.no}</span></div>
+        <div class="sub">${o.items.join(", ")} · <b>${won(o.total)}</b></div>
+        ${o.memo ? `<div class="memo">* ${o.memo}</div>` : ""}
+        <div class="ph">${o.phone}</div>
+      </div><span class="st ${o.status==="입금"?"paid":o.status==="전달"?"done":""}">${STATUS[o.status]}</span></div>
+      <div class="acts">
+        ${o.status==="접수" ? `<button data-no="${o.no}" data-st="입금">입금 확인</button>` : ""}
+        ${o.status==="입금" ? `<button data-no="${o.no}" data-st="전달">전달 완료</button><button class="ghost" data-no="${o.no}" data-st="접수">되돌리기</button>` : ""}
+        ${o.status==="전달" ? `<button class="ghost" data-no="${o.no}" data-st="입금">되돌리기</button>` : ""}
+      </div>
+    </div>`).join("") : `<p class="note">이 회차 주문이 아직 없어요.</p>`;
+}
+$("#a-list").addEventListener("click", async (e) => {
+  const b = e.target.closest("[data-no]"); if (!b) return;
+  b.disabled = true; b.textContent = "저장 중…";
+  try { await post(CONFIG.hook.setStatus, { pin: PIN, no: b.dataset.no, status: b.dataset.st }); await loadAdmin(); }
+  catch (err) { alert("저장이 안 됐어요. 다시 눌러주세요."); b.disabled = false; }
+});
+$("#a-copy").addEventListener("click", async () => {
+  try { await navigator.clipboard.writeText(packingText()); $("#a-copy").textContent = "복사됐어요 — 카톡에 붙여넣기"; setTimeout(()=>$("#a-copy").textContent="포장 리스트 복사 (아빠 카톡용)", 2000); }
+  catch { prompt("아래 내용을 복사하세요", packingText()); }
+});
+
 render();
 </script>
 </body>
+</html>
 </html>
