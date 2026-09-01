@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<title>청정한우 사다드림</title>
+<meta name="robots" content="noindex">
+<style>
+  :root { --y:#FFD400; --ink:#1A1A1A; --red:#D42B2B; --grey:#6B6B6B; --line:#EAEAEA; }
+  * { box-sizing:border-box; }
+  body { margin:0; background:#fff; color:var(--ink); font-family:'Noto Sans KR','Apple SD Gothic Neo',system-ui,sans-serif; -webkit-font-smoothing:antialiased; }
+  .wrap { max-width:480px; margin:0 auto; min-height:100vh; }
+  header { padding:24px 20px 8px; }
+  .brand { display:inline-block; background:var(--y); padding:4px 8px; font-weight:900; font-size:24px; line-height:1; }
+  header h1 { margin:6px 0 0; font-size:24px; font-weight:900; }
+  header p { margin:2px 0 0; color:var(--grey); font-weight:700; font-size:14px; }
+  nav { display:flex; border-bottom:1px solid var(--line); }
+  nav button { flex:1; padding:12px 0; background:none; border:0; border-bottom:3px solid transparent; font-weight:900; font-size:14px; color:var(--grey); }
+  nav button.on { color:var(--ink); border-bottom-color:var(--ink); }
+  main { padding:20px; }
+  .banner { border-radius:10px; padding:16px; margin-bottom:20px; background:var(--y); }
+  .banner.closed { background:var(--red); color:#fff; }
+  .banner small { font-weight:700; font-size:14px; display:block; }
+  .banner b { font-size:30px; font-weight:900; line-height:1.1; display:block; }
+  h2 { font-size:20px; font-weight:900; margin:0 0 12px; }
+  .item { display:flex; align-items:center; gap:12px; padding:12px 0; border-bottom:1px solid var(--line); }
+  .item .info { flex:1; }
+  .item .name { font-weight:900; }
+  .tag { display:inline-block; padding:1px 6px; font-size:11px; font-weight:900; border-radius:2px; background:#E9E9E9; margin-right:4px; }
+  .tag.pp { background:var(--ink); color:var(--y); }
+  .item .meta { font-size:12px; color:var(--grey); margin-top:2px; }
+  .item .price { font-weight:900; font-size:18px; margin-top:4px; }
+  .step { display:flex; align-items:center; gap:8px; }
+  .step button { width:40px; height:40px; border-radius:50%; font-weight:900; font-size:20px; border:2px solid var(--ink); background:#fff; }
+  .step button.plus { background:var(--ink); color:var(--y); }
+  .step button:disabled { opacity:.3; }
+  .step span { width:24px; text-align:center; font-weight:900; font-size:18px; }
+  label { display:block; margin:0 0 12px; }
+  label span { display:block; font-size:14px; font-weight:700; margin-bottom:4px; }
+  input, textarea { width:100%; border:2px solid #D9D9D9; border-radius:6px; padding:10px 12px; font-size:16px; outline:none; font-family:inherit; }
+  input:focus, textarea:focus { border-color:var(--ink); }
+  .total { display:flex; justify-content:space-between; align-items:flex-end; margin:8px 0 12px; }
+  .total .q { color:var(--grey); font-weight:700; }
+  .total .w { font-weight:900; font-size:24px; }
+  .btn { width:100%; padding:14px; border:0; border-radius:6px; font-weight:900; font-size:16px; background:var(--ink); color:var(--y); }
+  .btn.ghost { background:#fff; color:var(--ink); border:2px solid var(--ink); }
+  .btn:disabled { opacity:.4; }
+  .note { font-size:12px; color:var(--grey); margin-top:8px; }
+  .err { color:var(--red); font-weight:700; font-size:14px; margin-top:8px; }
+  .card { background:var(--y); border-radius:10px; padding:20px; margin-bottom:16px; }
+  .card small { color:var(--grey); font-weight:700; font-size:14px; }
+  .card .no { font-size:36px; font-weight:900; letter-spacing:-.5px; }
+  .box { border:2px solid var(--ink); border-radius:6px; padding:12px; margin-bottom:12px; }
+  .stars button { background:none; border:0; font-size:32px; color:#DDD; padding:0 2px; }
+  .stars button.on { color:var(--y); }
+  .review { padding:8px 0; border-top:1px solid var(--line); font-size:14px; }
+  .review b { color:var(--y); text-shadow:0 0 1px #999; }
+  .hidden { display:none; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="brand">청정한우</div>
+    <h1>사다드림</h1>
+    <p>부천 상동시장 30년 · 매일 11시 마감</p>
+  </header>
+  <nav>
+    <button class="on" data-v="order">주문</button>
+    <button data-v="track">내 주문 확인</button>
+  </nav>
+  <main>
+    <!-- 주문 -->
+    <section id="v-order">
+      <div class="banner" id="banner"><small id="b-label"></small><b id="b-count"></b><small id="b-left"></small></div>
+      <h2>오늘 사다 드릴 수 있는 것</h2>
+      <div id="items"></div>
+      <div style="margin-top:24px">
+        <label><span>이름 (입금자명과 같게)</span><input id="f-name" placeholder="홍길동"></label>
+        <label><span>연락처</span><input id="f-phone" inputmode="numeric" placeholder="01012345678"></label>
+        <label><span>동 / 호수</span><input id="f-unit" placeholder="103동 1201호"></label>
+        <label><span>요청사항 (선택)</span><input id="f-memo" placeholder="국거리는 큼직하게 등"></label>
+      </div>
+      <div class="total"><span class="q" id="t-qty">0팩</span><span class="w" id="t-won">0원</span></div>
+      <button class="btn" id="submit" disabled>주문하기</button>
+      <p class="err hidden" id="err"></p>
+      <p class="note">연락처·동호수는 전달 목적으로만 쓰고 전달 후 30일 안에 지웁니다.</p>
+    </section>
+
+    <!-- 주문 완료 -->
+    <section id="v-done" class="hidden">
+      <div class="card"><small>주문번호</small><div class="no" id="d-no"></div><div style="font-weight:700;margin-top:6px" id="d-sum"></div></div>
+      <h2>입금하시면 접수가 확정돼요</h2>
+      <div class="box"><div style="font-weight:900" id="d-bank"></div><div class="note">입금자명은 <b id="d-name"></b>으로 부탁드려요. 11시까지 입금 확인된 주문만 당일 사 옵니다.</div></div>
+      <p class="note" id="d-pickup"></p>
+      <button class="btn ghost" id="again">처음으로</button>
+    </section>
+
+    <!-- 조회 + 리뷰 -->
+    <section id="v-track" class="hidden">
+      <h2>내 주문 확인</h2>
+      <label><span>주문번호</span><input id="q-no" placeholder="CH123456"></label>
+      <label><span>전화번호 뒷 4자리</span><input id="q-tail" inputmode="numeric"></label>
+      <button class="btn" id="lookup">조회</button>
+      <p class="err hidden" id="q-err"></p>
+      <div id="q-result" class="hidden" style="margin-top:20px">
+        <div class="card"><div style="font-weight:900;font-size:18px" id="q-head"></div><div style="font-weight:700;font-size:14px;margin-top:4px" id="q-body"></div></div>
+        <div id="q-review" class="hidden">
+          <h2>받아보신 소감 남겨주세요</h2>
+          <div class="stars" id="stars"></div>
+          <textarea id="r-text" rows="4" placeholder="고기는 어땠나요?"></textarea>
+          <div style="margin-top:8px"><button class="btn" id="r-send" disabled>후기 남기기</button></div>
+        </div>
+        <p id="q-thanks" class="hidden" style="font-weight:700;margin-top:12px">후기 감사해요. 아빠한테 자랑할게요.</p>
+      </div>
+    </section>
+  </main>
+</div>
+
+<script>
+/* ============ 설정 (여기만 수정) ============ */
+const CONFIG = {
+  cap: 15,                                   // 회차당 최대 팩 수
+  bank: "OO은행 000-000-000000 (예금주 윤O희)", // 아빠 계좌
+  hook: {
+    order:  "https://hook.us2.make.com/fp92uiwugijwq8tsqbwvzya8hgylmxyv",
+    review: "https://hook.us2.make.com/a7wpkf8ourmie2y29fkl61yk3biazu1r",
+    lookup: "https://hook.us2.make.com/72ouc86g1eus5v2yim6tas8ncqip2cib",
+  },
+};
+// 품목 — 시트 Products 탭과 같게 유지 (품목명은 반드시 동일해야 집계됨)
+const PRODUCTS = [
+  { id:"p1", name:"아빠 고집 국거리",          grade:"2등급", weight:"500g", price:18000 },
+  { id:"p2", name:"실속 구이팩 (등심·채끝)",   grade:"2등급", weight:"400g", price:26000 },
+  { id:"p3", name:"1++ 채끝",                  grade:"1++",   weight:"300g", price:39000 },
+  { id:"p4", name:"1++ 구이세트 (등심+채끝)",  grade:"1++",   weight:"600g", price:78000 },
+];
+/* ============================================ */
+
+const $ = (s) => document.querySelector(s);
+const won = (n) => n.toLocaleString("ko-KR") + "원";
+const STATUS = { 접수:"입금 대기", 입금:"입금 확인", 전달:"전달 완료" };
+async function post(url, payload) {
+  const r = await fetch(url, { method:"POST", headers:{ "Content-Type":"application/json" }, body: JSON.stringify(payload) });
+  if (!r.ok) throw new Error("HTTP " + r.status);
+  return r;
+}
+
+/* 회차 (KST 11:00 기준) */
+function kst() { const n = new Date(); return new Date(n.getTime() + (9*60 + n.getTimezoneOffset())*60000); }
+function ds(d) { return d.toISOString().slice(0,10); }
+function batch() {
+  const now = kst(); const c = new Date(now); c.setHours(11,0,0,0);
+  if (now < c) return { batch: ds(now), cutoff: c, label: "오늘" };
+  const t = new Date(now); t.setDate(t.getDate()+1); t.setHours(11,0,0,0);
+  return { batch: ds(t), cutoff: t, label: "내일" };
+}
+function countdown(c) { const ms = c - kst(); if (ms <= 0) return "마감"; const h = Math.floor(ms/3600000), m = Math.floor(ms%3600000/60000); return h > 0 ? `${h}시간 ${m}분` : `${m}분`; }
+
+/* 상태 */
+let qty = {}; let sending = false;
+const B = batch();
+// 수량 상한은 서버(시트)와 동기화되지 않는 로컬 표시용. 실제 통제는 사장님이 시트 보고 판단.
+const left = () => Math.max(0, CONFIG.cap - Object.values(qty).reduce((a,b)=>a+b,0));
+
+function render() {
+  $("#b-label").textContent = `${B.label} 11:00 마감까지`;
+  $("#b-count").textContent = countdown(B.cutoff);
+  const totalQty = Object.values(qty).reduce((a,b)=>a+b,0);
+  $("#b-left").textContent = `이번 주문 ${totalQty}팩 / 회차 최대 ${CONFIG.cap}팩`;
+  $("#items").innerHTML = PRODUCTS.map(p => `
+    <div class="item">
+      <div class="info">
+        <div class="name">${p.name}</div>
+        <div class="meta"><span class="tag ${p.grade==="1++"?"pp":""}">${p.grade}</span>${p.weight}</div>
+        <div class="price">${won(p.price)}</div>
+      </div>
+      <div class="step">
+        <button data-id="${p.id}" data-d="-1">−</button>
+        <span>${qty[p.id]||0}</span>
+        <button class="plus" data-id="${p.id}" data-d="1" ${left()===0?"disabled":""}>+</button>
+      </div>
+    </div>`).join("");
+  const items = PRODUCTS.filter(p => (qty[p.id]||0) > 0);
+  const total = items.reduce((s,p) => s + p.price*qty[p.id], 0);
+  $("#t-qty").textContent = `${totalQty}팩`; $("#t-won").textContent = won(total);
+  const name = $("#f-name").value.trim(), phone = $("#f-phone").value.replace(/-/g,""), unit = $("#f-unit").value.trim();
+  const valid = items.length && name && /^01\d{8,9}$/.test(phone) && unit && !sending;
+  $("#submit").disabled = !valid;
+  $("#submit").textContent = sending ? "전송 중…" : `${B.label} 회차로 주문하기`;
+}
+document.addEventListener("click", (e) => {
+  const b = e.target.closest("[data-id]"); if (!b) return;
+  const id = b.dataset.id, d = Number(b.dataset.d);
+  qty[id] = Math.max(0, (qty[id]||0) + d); render();
+});
+["#f-name","#f-phone","#f-unit"].forEach(s => $(s).addEventListener("input", render));
+setInterval(render, 30000);
+
+/* 주문 전송 */
+$("#submit").addEventListener("click", async () => {
+  const items = PRODUCTS.filter(p => (qty[p.id]||0) > 0).map(p => ({ id:p.id, name:p.name, price:p.price, qty:qty[p.id], line:`${p.name} ×${qty[p.id]}` }));
+  const o = {
+    no: "CH" + Date.now().toString().slice(-6), batch: B.batch,
+    name: $("#f-name").value.trim(), phone: $("#f-phone").value.replace(/-/g,""), unit: $("#f-unit").value.trim(), memo: $("#f-memo").value.trim(),
+    items, total: items.reduce((s,i)=>s+i.price*i.qty,0), status:"접수", at: kst().toISOString(),
+  };
+  sending = true; render(); $("#err").classList.add("hidden");
+  try {
+    await post(CONFIG.hook.order, o);
+    $("#d-no").textContent = o.no; $("#d-sum").textContent = `${o.batch} 회차 · ${won(o.total)}`;
+    $("#d-bank").textContent = CONFIG.bank; $("#d-name").textContent = o.name; $("#d-pickup").textContent = "주문번호와 전화번호 뒷 4자리로 '내 주문 확인'에서 상태를 볼 수 있어요.";
+    $("#v-order").classList.add("hidden"); $("#v-done").classList.remove("hidden");
+  } catch (e) {
+    $("#err").textContent = "주문 전송이 안 됐어요. 잠시 후 다시 눌러주세요."; $("#err").classList.remove("hidden");
+  } finally { sending = false; render(); }
+});
+$("#again").addEventListener("click", () => { qty = {}; ["#f-name","#f-phone","#f-unit","#f-memo"].forEach(s => $(s).value = ""); $("#v-done").classList.add("hidden"); $("#v-order").classList.remove("hidden"); render(); });
+
+/* 탭 */
+document.querySelectorAll("nav button").forEach(b => b.addEventListener("click", () => {
+  document.querySelectorAll("nav button").forEach(x => x.classList.remove("on")); b.classList.add("on");
+  ["order","done","track"].forEach(v => $("#v-"+v).classList.add("hidden"));
+  $("#v-" + b.dataset.v).classList.remove("hidden");
+}));
+
+/* 조회 + 리뷰 */
+let cur = null, stars = 5;
+$("#stars").innerHTML = [1,2,3,4,5].map(n => `<button data-s="${n}" class="${n<=stars?"on":""}">★</button>`).join("");
+$("#stars").addEventListener("click", (e) => { const b = e.target.closest("[data-s]"); if (!b) return; stars = Number(b.dataset.s); document.querySelectorAll("#stars button").forEach(x => x.classList.toggle("on", Number(x.dataset.s) <= stars)); });
+$("#r-text").addEventListener("input", () => $("#r-send").disabled = !$("#r-text").value.trim());
+
+$("#lookup").addEventListener("click", async () => {
+  const no = $("#q-no").value.trim().toUpperCase(), tail = $("#q-tail").value.trim();
+  $("#q-err").classList.add("hidden"); $("#q-result").classList.add("hidden");
+  try {
+    const r = await post(CONFIG.hook.lookup, { no, tail });
+    const rows = await r.json();
+    if (!Array.isArray(rows) || !rows.length) throw new Error("none");
+    const st = rows.every(x => x.status === "전달") ? "전달" : rows.some(x => x.status === "입금") ? "입금" : "접수";
+    cur = { no: rows[0].no, batch: rows[0].batch, name: rows[0].name, unit: rows[0].unit, items: rows.map(x => `${x.item} ${x.qty}`).join(", "), total: rows.reduce((s,x)=>s+Number(x.amount||0),0), status: st };
+    $("#q-head").textContent = `${cur.no} · ${STATUS[cur.status]}`;
+    $("#q-body").textContent = `${cur.batch} 회차 · ${cur.items} · ${won(cur.total)}`;
+    $("#q-result").classList.remove("hidden");
+    $("#q-review").classList.toggle("hidden", cur.status !== "전달"); $("#q-thanks").classList.add("hidden");
+  } catch (e) {
+    $("#q-err").textContent = "일치하는 주문이 없어요. 주문번호와 뒷자리를 다시 확인해 주세요."; $("#q-err").classList.remove("hidden");
+  }
+});
+$("#r-send").addEventListener("click", async () => {
+  if (!cur) return;
+  const r = { review_id: "RV" + Date.now().toString().slice(-6), no: cur.no, name: cur.name, unit: cur.unit, stars, text: $("#r-text").value.trim(), at: kst().toISOString() };
+  $("#r-send").disabled = true;
+  try { await post(CONFIG.hook.review, r); $("#q-review").classList.add("hidden"); $("#q-thanks").classList.remove("hidden"); $("#r-text").value = ""; }
+  catch (e) { alert("후기 전송이 안 됐어요. 다시 시도해 주세요."); $("#r-send").disabled = false; }
+});
+
+render();
+</script>
+</body>
+</html>
