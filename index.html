@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
-<title>청정한우 사다드림</title>
+<title>청정한우 사다드림 for 디방</title>
 <meta name="robots" content="noindex">
 <style>
   :root { --y:#FFD400; --ink:#1A1A1A; --red:#D42B2B; --grey:#6B6B6B; --line:#EAEAEA; }
@@ -81,13 +81,43 @@
   .acts button { flex:1; padding:10px; border:0; border-radius:6px; font-weight:900; font-size:14px; background:var(--ink); color:var(--y); }
   .acts button.ghost { background:#fff; color:var(--ink); border:2px solid var(--ink); }
   .acts button:disabled { opacity:.4; }
+
+/* 초록 테마 (상세페이지 색) */
+<style id="theme-green">
+  :root { --g:#1F6B4E; --r:#D6402B; --mint:#EEF6F1; --cream:#FBF6EE; --ink:#1C2B24; --grey:#5B6B63; --line:#E3ECE7; }
+  body { background:#fff; }
+  .brand { background:var(--g); color:#fff; border-radius:6px; padding:5px 10px; }
+  header p { color:var(--grey); }
+  nav button.on { color:var(--g); border-bottom-color:var(--g); }
+  .banner { background:var(--g); color:#fff; }
+  .banner small { color:#CDE6D9; }
+  .box { border-color:var(--line); background:var(--cream); border-width:1px; border-radius:10px; }
+  .ghead { background:var(--mint); color:var(--g); border-left:4px solid var(--g); border-radius:4px; }
+  .ghead small { color:var(--grey); }
+  .step button { border-color:var(--g); color:var(--g); }
+  .step button.plus { background:var(--g); color:#fff; border-color:var(--g); }
+  .item .price { color:var(--r); }
+  .sise { color:var(--grey); }
+  .btn { background:var(--r); color:#fff; border-radius:10px; }
+  .btn.ghost { background:#fff; color:var(--g); border-color:var(--g); }
+  .card { background:var(--mint); }
+  .acct button { background:var(--g); color:#fff; border-color:var(--g); }
+  .stars button.on { color:var(--r); }
+  .st.paid { background:var(--mint); color:var(--g); } .st.done { background:var(--g); color:#fff; }
+  .acts button { background:var(--g); color:#fff; }
+  .acts button.ghost { background:#fff; color:var(--g); border-color:var(--g); }
+  .tag.pp { background:var(--g); color:#fff; }
+  input:focus, textarea:focus { border-color:var(--g); }
+</style>
+
+  .for { font-size:17px; font-weight:700; color:var(--g); background:var(--mint); padding:3px 9px; border-radius:20px; vertical-align:middle; margin-left:4px; }
 </style>
 </head>
 <body>
 <div class="wrap">
   <header>
     <div class="brand">청정한우</div>
-    <h1>사다드림</h1>
+    <h1>사다드림 <span class="for">for 디방</span></h1>
     <p>부천 상동시장 30년 · 매일 오전 11시 마감</p>
   </header>
   <nav>
