@@ -218,7 +218,7 @@
 /* ============ 설정 (여기만 수정) ============ */
 const CONFIG = {
   cap: 15,                                   // 회차당 최대 팩 수
-  pickup: { time: "오후 5:00 ~ 5:30", place: "A블럭 110동 지하 4층", sign: "초록 보냉박스" },  // 픽업 시간·장소
+  pickup: { time: "오후 5:00 ~ 5:30", place: "A블럭 110동 지하 4층", sign: "" },  // 픽업 시간·장소
   fee: 3000,                                 // 배달비 (주문 1건당)
   bankName: "신한은행", bankAccount: "110014500821", bankHolder: "윤장희(청정한우)",
   hook: {
@@ -323,7 +323,7 @@ function pickupDay(c) {   // 마감일 = 픽업일, 토·일이면 월요일
 function showPickup() {
   $("#pk-day").textContent = pickupDay(batch().cutoff);
   $("#pk-time").textContent = CONFIG.pickup.time;
-  $("#pk-place").textContent = `${CONFIG.pickup.place} · ${CONFIG.pickup.sign}`;
+  $("#pk-place").textContent = CONFIG.pickup.sign ? `${CONFIG.pickup.place} · ${CONFIG.pickup.sign}` : CONFIG.pickup.place;
   $("#d-pick").classList.remove("hidden");
 }
 function countdown(c) { const ms = c - kst(); if (ms <= 0) return "마감"; const h = Math.floor(ms/3600000), m = Math.floor(ms%3600000/60000); return h > 0 ? `${h}시간 ${m}분` : `${m}분`; }
