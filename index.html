@@ -45,7 +45,9 @@
   .step button { width:40px; height:40px; border-radius:50%; font-weight:900; font-size:20px; border:2px solid var(--ink); background:#fff; }
   .step button.plus { background:var(--ink); color:var(--y); }
   .step button:disabled { opacity:.3; }
-  .step span { width:24px; text-align:center; font-weight:900; font-size:18px; }
+  .step .amt { min-width:64px; text-align:center; line-height:1.15; }
+  .step .amt b { display:block; font-weight:900; font-size:17px; }
+  .step .amt small { display:block; font-size:11px; font-weight:700; color:var(--grey); }
   label { display:block; margin:0 0 12px; }
   label span { display:block; font-size:14px; font-weight:700; margin-bottom:4px; }
   input, textarea { width:100%; border:2px solid #D9D9D9; border-radius:6px; padding:10px 12px; font-size:16px; outline:none; font-family:inherit; }
@@ -97,7 +99,7 @@
     <!-- 주문 -->
     <section id="v-order">
       <div class="banner" id="banner"><small id="b-label"></small><b id="b-count"></b><small id="b-left"></small></div>
-      <div class="box" style="font-size:14px;line-height:1.6">오전 11시까지 <b>입금 확인된 주문만 당일</b> 배송해드려요.<br>오전 11시 이후는 익일 발송, <b>주말 주문은 월요일 발송</b> 예정입니다.<br><b>모든 고기는 150g부터</b> 주문할 수 있어요.<br>스테이크는 1cm부터 — 더 두껍게 원하시면 요청사항에 적어주세요.</div>
+      <div class="box" style="font-size:14px;line-height:1.6">오전 11시까지 <b>입금 확인된 주문만 당일</b> 배송해드려요.<br>오전 11시 이후는 익일 발송, <b>주말 주문은 월요일 발송</b> 예정입니다.<br><b>고기는 150g(1인분) 단위</b>로 담겨요. 갈비류는 600g, 사골육수는 1병(1.5L) 단위예요.<br>스테이크는 1cm부터 — 더 두껍게 원하시면 요청사항에 적어주세요.</div>
       <h2>메뉴</h2>
       <div id="items"></div>
       <div style="margin-top:24px">
@@ -106,7 +108,7 @@
         <label><span>동 / 호수</span><input id="f-unit" placeholder="103동 1201호"></label>
         <label><span>요청사항 (선택)</span><input id="f-memo" placeholder="국거리는 큼직하게 등"></label>
       </div>
-      <div class="total"><span class="q" id="t-qty">0팩</span><span class="w" id="t-won">0원</span></div>
+      <div class="total"><span class="q" id="t-qty">0개 품목</span><span class="w" id="t-won">0원</span></div>
       <button class="btn" id="submit" disabled>주문하기</button>
       <p class="err hidden" id="err"></p>
       <p class="note">연락처·동호수는 전달 목적으로만 쓰고 전달 후 30일 안에 지웁니다.</p>
@@ -227,10 +229,23 @@ const PRODUCTS = [
 const GROUP_NOTE = {
   "한우 1+/1++ · 구이용": "등급은 그날 들어온 소에 따라 1+ 또는 1++. 스테이크는 1cm부터, 더 두껍게 원하시면 요청사항에 적어주세요.",
   "한우 1+/1++": "손다짐육은 칼로 직접 다져 일반 다짐육보다 금액이 추가돼요.",
-  "한우 1+/1++ · 국거리": "팩 국거리는 2팩 10,000원이에요.",
+  "한우 1+/1++ · 국거리": "팩 국거리는 1팩 180g, 2팩 10,000원이에요.",
+  "한우 1+/1++ · 사골": "사골육수는 1병 1.5L 단위예요.",
+  "한우 1+/1++ · 갈비": "갈비는 600g 단위예요.",
+  "한돈 · 갈비": "갈비는 600g 단위예요.",
+  "LA갈비 · 미국산": "원산지 미국산 · 600g 단위예요.",
   "한돈 · 구이용": "모듬의 갈매기살은 한정수량이라 조기 마감될 수 있어요.",
-  "LA갈비 · 미국산": "원산지 미국산이에요.",
 };
+// 단위: 기본 150g(1인분). 예외는 아래 UNIT에서 지정
+const UNIT = {
+  b09: { step:360, label:(n)=>`${n*2}팩`, sub:(n)=>`${n*360}g · 1팩 180g` },
+  b18: { step:1500, label:(n)=>`${n}병`, sub:(n)=>`${(n*1.5).toLocaleString("ko-KR")}L`, bottle:true },
+  b21: { step:600 }, b22: { step:600 }, p15: { step:600 }, p16: { step:600 }, u01: { step:600 }, u02: { step:600 },
+};
+const unitOf = (p) => ({ step:150, ...(UNIT[p.id]||{}) });
+const amtLabel = (p, n) => { const u = unitOf(p); return u.label ? u.label(n) : `${(n*u.step).toLocaleString("ko-KR")}g`; };
+const amtSub = (p, n) => { const u = unitOf(p); if (u.sub) return u.sub(n); const g = n*u.step; return u.step===150 ? `약 ${g/150}인분` : `${u.step}g 단위`; };
+const fmtAmt = (name, v) => { const p = PRODUCTS.find(x=>x.name===name); return p && unitOf(p).bottle ? `${Number(v)/1500}병` : `${Number(v).toLocaleString("ko-KR")}g`; };
 /* ============================================ */
 
 const $ = (s) => document.querySelector(s);
@@ -263,7 +278,7 @@ function render() {
   $("#b-label").textContent = `${B.label} 11:00 마감까지`;
   $("#b-count").textContent = countdown(B.cutoff);
   const totalQty = Object.values(qty).reduce((a,b)=>a+b,0);
-  $("#b-left").textContent = `이번 주문 ${totalQty}팩 / 회차 최대 ${CONFIG.cap}팩`;
+  $("#b-left").textContent = "";
   let lastG = "";
   $("#items").innerHTML = PRODUCTS.map(p => (p.group !== lastG ? (lastG = p.group, `<div class="ghead">${p.group}${GROUP_NOTE[p.group] ? `<small>${GROUP_NOTE[p.group]}</small>` : ""}</div>`) : "") + `
     <div class="item">
@@ -274,14 +289,14 @@ function render() {
       </div>
       <div class="step">
         <button data-id="${p.id}" data-d="-1">−</button>
-        <span>${qty[p.id]||0}</span>
-        <button class="plus" data-id="${p.id}" data-d="1" ${left()===0?"disabled":""}>+</button>
+        <span class="amt">${qty[p.id] ? `<b>${amtLabel(p, qty[p.id])}</b><small>${amtSub(p, qty[p.id])}</small>` : `<b>0</b><small>${amtLabel(p,1)}부터</small>`}</span>
+        <button class="plus" data-id="${p.id}" data-d="1" >+</button>
       </div>
     </div>`).join("");
   const items = PRODUCTS.filter(p => (qty[p.id]||0) > 0);
   const total = items.reduce((s,p) => s + p.price*qty[p.id], 0);
   const hasSise = items.some(p => !p.price);
-  $("#t-qty").textContent = `${totalQty}팩`; $("#t-won").textContent = hasSise ? (total ? won(total) + " + 시세분" : "시세 · 주문 후 안내") : won(total);
+  $("#t-qty").textContent = `${items.length}개 품목`; $("#t-won").textContent = hasSise ? (total ? won(total) + " + 시세분" : "시세 · 주문 후 안내") : won(total);
   const name = $("#f-name").value.trim(), phone = $("#f-phone").value.replace(/-/g,""), unit = $("#f-unit").value.trim();
   const valid = items.length && name && /^01\d{8,9}$/.test(phone) && unit && !sending;
   $("#submit").disabled = !valid;
@@ -300,7 +315,8 @@ setInterval(render, 30000);
 
 /* 주문 전송 */
 $("#submit").addEventListener("click", async () => {
-  const items = PRODUCTS.filter(p => (qty[p.id]||0) > 0).map(p => ({ id:p.id, name:p.name, price:p.price, qty:qty[p.id], line:`${p.name} ×${qty[p.id]}` }));
+  const items = PRODUCTS.filter(p => (qty[p.id]||0) > 0).map(p => { const n = qty[p.id], g = n*unitOf(p).step;
+    return { id:p.id, name:p.name, price:p.price, qty:n, grams:g, amount:p.price*n, line:`${p.name} ${amtLabel(p,n)}` }; });
   const o = {
     no: "CH" + Date.now().toString().slice(-6), batch: B.batch,
     name: $("#f-name").value.trim(), phone: $("#f-phone").value.replace(/-/g,""), unit: $("#f-unit").value.trim(), memo: $("#f-memo").value.trim(),
@@ -349,7 +365,7 @@ $("#lookup").addEventListener("click", async () => {
     const rows = await r.json();
     if (!Array.isArray(rows) || !rows.length) throw new Error("none");
     const st = rows.every(x => x.status === "전달") ? "전달" : rows.some(x => x.status === "입금") ? "입금" : "접수";
-    cur = { no: rows[0].no, batch: rows[0].batch, name: rows[0].name, unit: rows[0].unit, items: rows.map(x => `${x.item} ${x.qty}`).join(", "), total: rows.reduce((s,x)=>s+Number(x.amount||0),0), status: st };
+    cur = { no: rows[0].no, batch: rows[0].batch, name: rows[0].name, unit: rows[0].unit, items: rows.map(x => `${x.item} ${fmtAmt(x.item, x.qty)}`).join(", "), total: rows.reduce((s,x)=>s+Number(x.amount||0),0), status: st };
     $("#q-head").textContent = `${cur.no} · ${STATUS[cur.status]}`;
     $("#q-body").textContent = `${cur.batch} 회차 · ${cur.items} · ${won(cur.total)}`;
     $("#q-result").classList.remove("hidden");
@@ -389,14 +405,14 @@ async function loadAdmin() {
 function groupOrders(rows) {
   const g = {};
   rows.forEach(x => { (g[x.no] ||= { no:x.no, name:x.name, unit:x.unit, phone:x.phone, memo:x.memo, items:[], total:0, statuses:[] });
-    g[x.no].items.push(`${x.item} ×${x.qty}`); g[x.no].total += Number(x.amount||0); g[x.no].statuses.push(x.status); });
+    g[x.no].items.push(`${x.item} ${fmtAmt(x.item, x.qty)}`); g[x.no].total += Number(x.amount||0); g[x.no].statuses.push(x.status); });
   return Object.values(g).map(o => ({ ...o, status: o.statuses.every(s=>s==="전달") ? "전달" : o.statuses.some(s=>s==="입금"||s==="전달") ? "입금" : "접수" }));
 }
 function packingText() {
   const paid = A.filter(x => x.status === "입금" || x.status === "전달");
   const agg = {}; paid.forEach(x => agg[x.item] = (agg[x.item]||0) + Number(x.qty||0));
   const orders = groupOrders(A).filter(o => o.status !== "접수").sort((a,b)=>a.unit.localeCompare(b.unit,"ko"));
-  return `[청정한우 사다드림 ${$("#a-batch").value}]\n▶ 포장 리스트\n` + (Object.entries(agg).map(([k,v])=>`- ${k} ${v}팩`).join("\n") || "- 없음")
+  return `[청정한우 사다드림 ${$("#a-batch").value}]\n▶ 포장 리스트\n` + (Object.entries(agg).map(([k,v])=>`- ${k} ${fmtAmt(k, v)}`).join("\n") || "- 없음")
     + `\n\n▶ 전달 순서\n` + (orders.map(o=>`${o.unit} ${o.name} (${o.items.join(", ")})${o.memo?" *"+o.memo:""}`).join("\n") || "- 없음");
 }
 function renderAdmin() {
@@ -405,7 +421,7 @@ function renderAdmin() {
   const agg = {}; A.filter(x=>x.status!=="접수").forEach(x => agg[x.item]=(agg[x.item]||0)+Number(x.qty||0));
   $("#a-summary").classList.remove("hidden");
   $("#a-summary").innerHTML = `<small>접수 ${orders.length}건 · 입금확인 ${paid.length}건 · 매출 ${won(paid.reduce((s,o)=>s+o.total,0))}</small>
-    <div style="font-weight:900;margin-top:6px">${Object.entries(agg).map(([k,v])=>`${k} <b>${v}팩</b>`).join("<br>") || "입금확인된 주문 없음"}</div>`;
+    <div style="font-weight:900;margin-top:6px">${Object.entries(agg).map(([k,v])=>`${k} <b>${fmtAmt(k, v)}</b>`).join("<br>") || "입금확인된 주문 없음"}</div>`;
   $("#a-copy").classList.toggle("hidden", !A.length);
   $("#a-list").innerHTML = orders.length ? orders.map(o => `
     <div class="order">
