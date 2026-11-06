@@ -25,6 +25,11 @@
   h2 { font-size:20px; font-weight:900; margin:0 0 12px; }
   .item { display:flex; align-items:center; gap:12px; padding:12px 0; border-bottom:1px solid var(--line); }
   .item .info { flex:1; }
+  .thumb { width:72px; height:72px; border-radius:8px; object-fit:cover; flex-shrink:0; background:#F2F2F2; border:0; padding:0; }
+  .thumb img { width:100%; height:100%; object-fit:cover; border-radius:8px; display:block; }
+  .zoom { position:fixed; inset:0; background:rgba(0,0,0,.85); display:flex; align-items:center; justify-content:center; padding:20px; z-index:10; }
+  .zoom img { max-width:100%; max-height:80vh; border-radius:10px; }
+  .zoom p { position:absolute; bottom:24px; left:0; right:0; text-align:center; color:#fff; font-weight:900; margin:0; }
   .item .name { font-weight:900; }
   .tag { display:inline-block; padding:1px 6px; font-size:11px; font-weight:900; border-radius:2px; background:#E9E9E9; margin-right:4px; }
   .tag.pp { background:var(--ink); color:var(--y); }
@@ -178,6 +183,8 @@ const CONFIG = {
 };
 // 품목 — 시트 Products 탭과 이름이 글자 하나까지 같아야 집계됨
 // price 0 = "시세" (주문 후 금액 안내). 가격 확정되면 숫자 넣기.
+// 사진 = img 폴더에 상품 id 이름으로 넣고 아래 PHOTOS에 id 추가 (예: img/b05.jpg)
+const PHOTOS = ["b05","b09"];
 const PRODUCTS = [
   { id:"b01", group:"소고기 · 구이용", name:"살치살", price:0 },
   { id:"b02", group:"소고기 · 구이용", name:"안심", price:0 },
@@ -238,6 +245,7 @@ function render() {
   let lastG = "";
   $("#items").innerHTML = PRODUCTS.map(p => (p.group !== lastG ? (lastG = p.group, `<div class="ghead">${p.group}${GROUP_NOTE[p.group] ? `<small>${GROUP_NOTE[p.group]}</small>` : ""}</div>`) : "") + `
     <div class="item">
+      ${PHOTOS.includes(p.id) ? `<button class="thumb" data-zoom="${p.id}" aria-label="${p.name} 사진 크게 보기"><img src="img/${p.id}.jpg" alt="${p.name}" loading="lazy"></button>` : ""}
       <div class="info">
         <div class="name">${p.name}</div>
         <div class="price">${p.price ? won(p.price) : '<span class="sise">시세 · 주문 후 금액 안내</span>'}</div>
@@ -258,6 +266,9 @@ function render() {
   $("#submit").textContent = sending ? "전송 중…" : `${B.label} 회차로 주문하기`;
 }
 document.addEventListener("click", (e) => {
+  const z = e.target.closest("[data-zoom]");
+  if (z) { const p = PRODUCTS.find(x => x.id === z.dataset.zoom); const d = document.createElement("div"); d.className = "zoom";
+    d.innerHTML = `<img src="img/${p.id}.jpg" alt="${p.name}"><p>${p.name} · 눌러서 닫기</p>`; d.addEventListener("click", () => d.remove()); document.body.appendChild(d); return; }
   const b = e.target.closest("[data-id]"); if (!b) return;
   const id = b.dataset.id, d = Number(b.dataset.d);
   qty[id] = Math.max(0, (qty[id]||0) + d); render();
