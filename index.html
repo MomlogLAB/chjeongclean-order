@@ -117,6 +117,9 @@
   .pick p { margin:10px 0 0; font-size:13px; color:var(--grey); line-height:1.5; }
   .policy { font-size:13px; line-height:1.6; background:#FFF6F4; border:1px solid #F3C9BF; border-radius:10px; padding:12px 14px; margin:0 0 14px; color:var(--ink); }
   .policy b { color:var(--r); }
+  .acts.sms { display:flex; gap:8px; margin-top:8px; }
+  .smsbtn { flex:1; text-align:center; padding:10px; border-radius:6px; font-weight:900; font-size:14px; text-decoration:none; background:var(--g); color:#fff; }
+  .smsbtn.ghost { background:#fff; color:var(--g); border:2px solid var(--g); }
 </style>
 </head>
 <body>
@@ -490,6 +493,15 @@ function packingText() {
   return `[청정한우 사다드림 ${$("#a-batch").value}]\n▶ 포장 리스트\n` + (Object.entries(agg).map(([k,v])=>`- ${k} ${fmtAmt(k, v)}`).join("\n") || "- 없음")
     + `\n\n▶ 전달 순서\n` + (orders.map(o=>`${o.unit} ${o.name} (${o.items.join(", ")})${o.memo?" *"+o.memo:""}`).join("\n") || "- 없음");
 }
+/* 손님 문자 (내 폰 문자 앱으로 열기) */
+function telOf(v) { let t = String(v||"").replace(/\D/g,""); if (t.length === 10 && t[0] === "1") t = "0" + t; return t; }
+function dayLabel(ds) { const [y,m,d] = ds.split("-").map(Number); const t = new Date(y, m-1, d); return `${m}월 ${d}일(${"일월화수목금토"[t.getDay()]})`; }
+function smsText(kind, o) {
+  const P = CONFIG.pickup;
+  if (kind === "paid") return `[청정한우 사다드림] ${o.name}님, 입금 확인됐어요.\n픽업: ${dayLabel($("#a-batch").value)} ${P.time}\n장소: ${P.place}\n받으실 때 이름 + 휴대폰 뒷자리 알려주세요.`;
+  return `[청정한우 사다드림] ${o.name}님, 지금 ${P.place}에서 픽업 시작했어요. ${P.time.split("~").pop().trim()}까지 받아가세요!`;
+}
+function smsLink(kind, o) { return `sms:${telOf(o.phone)}?&body=${encodeURIComponent(smsText(kind, o))}`; }
 function renderAdmin() {
   const orders = groupOrders(A);
   const paid = orders.filter(o=>o.status!=="접수");
@@ -504,12 +516,11 @@ function renderAdmin() {
         <div class="who">${o.unit} ${o.name} <span class="ph">${o.no}</span></div>
         <div class="sub">${o.items.join(", ")} · <b>${won(o.total)}</b></div>
         ${o.memo ? `<div class="memo">* ${o.memo}</div>` : ""}
-        <div class="ph">${o.phone}</div>
+        <div class="ph">${telOf(o.phone)}</div>
       </div><span class="st ${o.status==="입금"?"paid":o.status==="전달"?"done":""}">${STATUS[o.status]}</span></div>
-      <div class="acts">
-        ${o.status==="접수" ? `<button data-no="${o.no}" data-st="입금">입금 확인</button>` : ""}
-        ${o.status==="입금" ? `<button data-no="${o.no}" data-st="전달">전달 완료</button><button class="ghost" data-no="${o.no}" data-st="접수">되돌리기</button>` : ""}
-        ${o.status==="전달" ? `<button class="ghost" data-no="${o.no}" data-st="입금">되돌리기</button>` : ""}
+      <div class="acts sms">
+        <a class="smsbtn" href="${smsLink("paid", o)}">입금 확인 문자</a>
+        <a class="smsbtn ghost" href="${smsLink("start", o)}">픽업 시작 문자</a>
       </div>
     </div>`).join("") : `<p class="note">이 회차 주문이 아직 없어요.</p>`;
 }
