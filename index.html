@@ -220,6 +220,7 @@
 const CONFIG = {
   cap: 15,                                   // 회차당 최대 팩 수
   pickup: { time: "오후 5:00 ~ 5:30", place: "A블럭 110동 지하 4층", sign: "" },  // 픽업 시간·장소
+  firstPickup: "2026-11-10",                 // 이 날짜 전 주문은 모두 이 날 픽업 (첫 회차)
   fee: 3000, freeOver: 150000,              // 배달비: 15만원 미만 주문만 3,000원
   bankName: "신한은행", bankAccount: "110014500821", bankHolder: "윤장희(청정한우)",
   hook: {
@@ -313,6 +314,7 @@ function batch() {   // 회차 = 픽업일. 11시 지나면 다음 날, 토·일
   const now = kst(); const c = new Date(now); c.setHours(11,0,0,0);
   if (now >= c) c.setDate(c.getDate()+1);
   while (c.getDay() === 0 || c.getDay() === 6) c.setDate(c.getDate()+1);
+  if (CONFIG.firstPickup) { const [y,m,d] = CONFIG.firstPickup.split("-").map(Number); const f = new Date(c); f.setFullYear(y, m-1, d); f.setHours(11,0,0,0); if (c < f) c.setTime(f.getTime()); }
   const days = Math.round((new Date(c).setHours(0,0,0,0) - new Date(now).setHours(0,0,0,0)) / 86400000);
   const label = days === 0 ? "오늘" : days === 1 ? "내일" : `${"일월화수목금토"[c.getDay()]}요일`;
   return { batch: ds(c), cutoff: c, label };
