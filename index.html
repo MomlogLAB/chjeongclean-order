@@ -477,7 +477,9 @@ async function loadAdmin() {
     const r = await post(CONFIG.hook.adminList, { pin: PIN, batch: $("#a-batch").value });
     const rows = await r.json();
     if (!Array.isArray(rows)) return false;
-    A = rows; renderAdmin(); return true;
+    const want = $("#a-batch").value;   // 시트 날짜 형식이 달라도 맞추기 (2026-11-10 / 2026. 11. 10 등)
+    const norm = (v) => { const m = String(v||"").match(/(\d{4})\D+(\d{1,2})\D+(\d{1,2})/); return m ? `${m[1]}-${m[2].padStart(2,"0")}-${m[3].padStart(2,"0")}` : ""; };
+    A = rows.filter(x => x && x.no && norm(x.batch) === want); renderAdmin(); return true;
   } catch (e) { return false; }
 }
 function groupOrders(rows) {
