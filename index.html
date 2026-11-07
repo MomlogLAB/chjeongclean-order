@@ -518,10 +518,11 @@ function renderAdmin() {
         ${o.memo ? `<div class="memo">* ${o.memo}</div>` : ""}
         <div class="ph">${telOf(o.phone)}</div>
       </div><span class="st ${o.status==="입금"?"paid":o.status==="전달"?"done":""}">${STATUS[o.status]}</span></div>
+      ${o.status === "접수" ? `<p class="note" style="margin:8px 0 0">입금 확인 전이에요. 시트 상태(I열)를 '입금'으로 바꾸고 [불러오기]를 누르면 문자 버튼이 나와요.</p>` : `
       <div class="acts sms">
         <a class="smsbtn" href="${smsLink("paid", o)}">입금 확인 문자</a>
         <a class="smsbtn ghost" href="${smsLink("start", o)}">픽업 시작 문자</a>
-      </div>
+      </div>`}
     </div>`).join("") : `<p class="note">이 회차 주문이 아직 없어요.</p>`;
 }
 $("#a-list").addEventListener("click", async (e) => {
