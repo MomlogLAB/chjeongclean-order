@@ -331,7 +331,7 @@ function batch() {   // 회차 = 픽업일. 11시 지나면 다음 날, 토·일
 }
 function feeInfo(goods, hasSise, n) {   // 15만원 미만 3,000원 / 이상 무료 / 시세 포함이면 확정 후 안내
   if (!n) return { amount:0, text:"", short:"" };
-  if (hasSise && goods < CONFIG.freeOver) return { amount:0, text:"배달비: 15만원 미만이면 3,000원 (시세 확정 후 안내)", short:"15만원 미만 시 3,000원 (확정 후 안내)" };
+  if (hasSise && goods < CONFIG.freeOver) return { amount:CONFIG.fee, text:"배달비 3,000원 포함 · 시세 확정 후 15만원 이상이면 무료", short:"3,000원 (15만원 이상이면 무료)" };
   if (goods >= CONFIG.freeOver) return { amount:0, text:"15만원 이상 · 배달비 무료", short:"무료 (15만원 이상)" };
   return { amount:CONFIG.fee, text:"배달비 3,000원 포함 (15만원 미만)", short:"3,000원 (15만원 미만)" };
 }
