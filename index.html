@@ -417,6 +417,10 @@ $("#submit").addEventListener("click", async () => {
     name: $("#f-name").value.trim(), phone: $("#f-phone").value.replace(/-/g,""), unit: $("#f-unit").value.trim(), memo: $("#f-memo").value.trim(),
     items, total: items.reduce((s,i)=>s+i.amount,0), status:"접수", at: kst().toISOString(),
   };
+  // 시트 1주문 1줄용: 품목 글자 / 포장 계산용 코드(품목코드:그램) / 고기 총 그램
+  o.itemsText = items.map(i => i.line).join(", ");
+  o.pack = items.filter(i => i.id !== "fee").map(i => `${i.id}:${i.grams}`).join(",");
+  o.grams = items.filter(i => i.id !== "fee" && !unitOf(i).bottle).reduce((s,i) => s + i.grams, 0);   // 병(사골) 제외 고기 g
   sending = true; render(); $("#err").classList.add("hidden");
   try {
     await post(CONFIG.hook.order, o);
@@ -496,8 +500,23 @@ async function loadAdmin() {
     if (!Array.isArray(rows)) return false;
     const want = $("#a-batch").value;   // 시트 날짜 형식이 달라도 맞추기 (2026-11-10 / 2026. 11. 10 등)
     const norm = (v) => { const m = String(v||"").match(/(\d{4})\D+(\d{1,2})\D+(\d{1,2})/); return m ? `${m[1]}-${m[2].padStart(2,"0")}-${m[3].padStart(2,"0")}` : ""; };
-    A = rows.filter(x => x && x.no && norm(x.batch) === want); renderAdmin(); return true;
+    A = expandRows(rows.filter(x => x && x.no && norm(x.batch) === want)); renderAdmin(); return true;
   } catch (e) { return false; }
+}
+// 새 형식(1주문 1줄, pack="b01:300,p03:150")을 품목별 줄로 풀어서 기존 계산을 그대로 쓰기
+function expandRows(rows) {
+  const out = [];
+  rows.forEach(x => {
+    const pack = String(x.pack || "").trim();
+    if (!pack) { out.push(x); return; }            // 예전 형식(품목별 1줄)은 그대로
+    const parts = pack.split(",").map(t => t.split(":")).filter(t => t[0]);
+    parts.forEach(([id, g], i) => {
+      const p = PRODUCTS.find(q => q.id === id);
+      out.push({ ...x, item: p ? p.name : id, qty: Number(g) || 0, amount: i === 0 ? Number(x.amount || 0) : 0 });
+    });
+    if (!parts.length) out.push(x);
+  });
+  return out;
 }
 function groupOrders(rows) {
   const g = {};
@@ -529,7 +548,7 @@ function smsLink(kind, o) { return `sms:${telOf(o.phone)}?&body=${encodeURICompo
 function renderAdmin() {
   const orders = groupOrders(A);
   const paid = orders.filter(o=>o.status!=="접수");
-  const agg = {}; A.filter(x=>x.status!=="접수").forEach(x => agg[x.item]=(agg[x.item]||0)+Number(x.qty||0));
+  const agg = {}; A.filter(x=>x.status!=="접수" && x.item!=="배달비").forEach(x => agg[x.item]=(agg[x.item]||0)+Number(x.qty||0));
   $("#a-summary").classList.remove("hidden");
   $("#a-summary").innerHTML = `<small>접수 ${orders.length}건 · 입금확인 ${paid.length}건 · 매출 ${won(paid.reduce((s,o)=>s+o.total,0))}</small>
     <div style="font-weight:900;margin-top:6px">${Object.entries(agg).map(([k,v])=>`${k} <b>${fmtAmt(k, v)}</b>`).join("<br>") || "입금확인된 주문 없음"}</div>`;
