@@ -130,7 +130,7 @@
   <header>
     <div class="brand">청정한우</div>
     <h1>사다드림 <span class="for">for 디방</span></h1>
-    <p>부천 상동시장 30년 · 매일 오전 11시 마감</p>
+    <p>부천 상동시장 30년 · 월·금 픽업 (당일 오전 11시 마감)</p>
   </header>
   <nav>
     <button class="on" data-v="order">주문</button>
@@ -141,7 +141,7 @@
     <!-- 주문 -->
     <section id="v-order">
       <div class="banner" id="banner"><small id="b-label"></small><b id="b-count"></b><small id="b-left"></small></div>
-      <div class="box" style="font-size:14px;line-height:1.6">오전 11시까지 <b>입금 확인된 주문만 당일 오후 5:00~5:30</b> <b>A블럭 110동 지하 4층</b>에서 받아가세요.<br>오전 11시 이후 주문은 다음 날, <b>주말 주문은 월요일</b> 픽업이에요. 배달비는 <b>15만원 미만 주문만 3,000원</b> (15만원 이상 무료).<br><b>고기는 150g(1인분) 단위</b>로 담겨요. 갈비류는 600g, 사골육수는 1병(1.5L) 단위예요.<br>스테이크는 1cm부터 — 더 두껍게 원하시면 요청사항에 적어주세요.</div>
+      <div class="box" style="font-size:14px;line-height:1.6"><b>매주 월·금 오후 5:00~5:30</b> <b>A블럭 110동 지하 4층</b>에서 받아가세요.<br>픽업일 <b>오전 11시까지 입금 확인된 주문</b>만 그날 픽업, 이후 주문은 다음 픽업일로 넘어가요. 배달비는 <b>15만원 미만 주문만 3,000원</b> (15만원 이상 무료).<br><b>고기는 150g(1인분) 단위</b>로 담겨요. 갈비류는 600g, 사골육수는 1병(1.5L) 단위예요.<br>스테이크는 1cm부터 — 더 두껍게 원하시면 요청사항에 적어주세요.</div>
       <h2>메뉴</h2>
       <div id="items"></div>
       <div style="margin-top:24px">
@@ -166,7 +166,7 @@
         <div style="font-weight:700;font-size:14px" id="d-bankname"></div>
         <div class="acct"><b id="d-acct"></b><button id="d-copy">계좌 복사</button></div>
         <div style="font-size:14px" id="d-holder"></div>
-        <div class="note">입금자명은 <b id="d-name"></b>으로 부탁드려요. 오전 11시까지 입금 확인된 주문만 당일 오후 5시 픽업돼요 (토·일은 월요일). 시세 품목은 금액을 따로 안내드립니다.</div>
+        <div class="note">입금자명은 <b id="d-name"></b>으로 부탁드려요. 픽업일 오전 11시까지 입금 확인된 주문만 그날 오후 5시 픽업돼요 (월·금). 시세 품목은 금액을 따로 안내드립니다.</div>
       </div>
       <button class="btn" id="d-paid">입금했어요 (사장님에게 알림)</button>
       <p class="note hidden" id="d-paid-ok" style="font-weight:700;color:var(--ink)">알림 보냈어요. 확인되면 상태가 '입금 확인'으로 바뀝니다.</p>
@@ -226,6 +226,7 @@
 const CONFIG = {
   cap: 15,                                   // 회차당 최대 팩 수
   pickup: { time: "오후 5:00 ~ 5:30", place: "A블럭 110동 지하 4층", sign: "" },  // 픽업 시간·장소
+  pickupDays: [1, 5],                        // 픽업 요일 (0일 1월 2화 3수 4목 5금 6토)
   firstPickup: "2026-11-10",                 // 이 날짜 전 주문은 모두 이 날 픽업 (첫 회차)
   fee: 3000, freeOver: 150000,              // 배달비: 15만원 미만 주문만 3,000원
   bankName: "신한은행", bankAccount: "110014500821", bankHolder: "윤장희(청정한우)",
@@ -324,11 +325,13 @@ async function post(url, payload) {
 /* 회차 (KST 11:00 기준) */
 function kst() { const n = new Date(); return new Date(n.getTime() + (9*60 + n.getTimezoneOffset())*60000); }
 function ds(d) { const z = (n) => String(n).padStart(2,"0"); return `${d.getFullYear()}-${z(d.getMonth()+1)}-${z(d.getDate())}`; }
-function batch() {   // 회차 = 픽업일. 11시 지나면 다음 날, 토·일은 월요일로
+function batch() {   // 회차 = 픽업일. 픽업 요일(월·금) 11시 마감, 지나면 다음 픽업 요일로
   const now = kst(); const c = new Date(now); c.setHours(11,0,0,0);
   if (now >= c) c.setDate(c.getDate()+1);
-  while (c.getDay() === 0 || c.getDay() === 6) c.setDate(c.getDate()+1);
-  if (CONFIG.firstPickup) { const [y,m,d] = CONFIG.firstPickup.split("-").map(Number); const f = new Date(c); f.setFullYear(y, m-1, d); f.setHours(11,0,0,0); if (c < f) c.setTime(f.getTime()); }
+  let first = null;
+  if (CONFIG.firstPickup) { const [y,m,d] = CONFIG.firstPickup.split("-").map(Number); first = new Date(c); first.setFullYear(y, m-1, d); first.setHours(11,0,0,0); }
+  if (first && c <= first) c.setTime(first.getTime());   // 첫 회차(11/10 화)는 예외로 유지
+  else while (!CONFIG.pickupDays.includes(c.getDay())) c.setDate(c.getDate()+1);
   const days = Math.round((new Date(c).setHours(0,0,0,0) - new Date(now).setHours(0,0,0,0)) / 86400000);
   const label = days === 0 ? "오늘" : days === 1 ? "내일" : `${"일월화수목금토"[c.getDay()]}요일`;
   return { batch: ds(c), cutoff: c, label };
