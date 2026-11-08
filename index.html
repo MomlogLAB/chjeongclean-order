@@ -186,12 +186,13 @@
     <!-- 조회 + 리뷰 -->
     <section id="v-track" class="hidden">
       <h2>내 주문 확인</h2>
-      <label><span>주문번호</span><input id="q-no" placeholder="CH123456"></label>
-      <label><span>전화번호 뒷 4자리</span><input id="q-tail" inputmode="numeric"></label>
+      <label><span>이름 (주문할 때 쓴 이름)</span><input id="q-name" placeholder="홍길동"></label>
+      <label><span>전화번호</span><input id="q-phone" inputmode="numeric" placeholder="01012345678"></label>
       <button class="btn" id="lookup">조회</button>
       <p class="err hidden" id="q-err"></p>
       <div id="q-result" class="hidden" style="margin-top:20px">
-        <div class="card"><div style="font-weight:900;font-size:18px" id="q-head"></div><div style="font-weight:700;font-size:14px;margin-top:4px" id="q-body"></div></div>
+        <div id="q-list"></div>
+        <div class="hidden"><div id="q-head"></div><div id="q-body"></div></div>
         <div id="q-review" class="hidden">
           <h2>받아보신 소감 남겨주세요</h2>
           <div class="stars" id="stars"></div>
@@ -428,7 +429,7 @@ $("#submit").addEventListener("click", async () => {
     await post(CONFIG.hook.order, o);
     $("#d-no").textContent = o.no; $("#d-sum").textContent = `${o.batch} 회차 · ${won(o.total)}`;
     $("#d-bankname").textContent = CONFIG.bankName; $("#d-acct").textContent = CONFIG.bankAccount; $("#d-holder").textContent = "예금주 " + CONFIG.bankHolder; $("#d-name").textContent = o.name;
-    LAST = o; $("#d-paid").disabled = false; $("#d-paid-ok").classList.add("hidden"); $("#d-pickup").textContent = "주문번호와 전화번호 뒷 4자리로 '내 주문 확인'에서 상태를 볼 수 있어요.";
+    LAST = o; $("#d-paid").disabled = false; $("#d-paid-ok").classList.add("hidden"); $("#d-pickup").textContent = "'내 주문 확인'에서 이름과 전화번호로 주문 상태를 볼 수 있어요.";
     $("#v-order").classList.add("hidden"); $("#v-done").classList.remove("hidden"); showPickup();
   } catch (e) {
     $("#err").textContent = "주문 전송이 안 됐어요. 잠시 후 다시 눌러주세요."; $("#err").classList.remove("hidden");
@@ -459,21 +460,30 @@ $("#stars").addEventListener("click", (e) => { const b = e.target.closest("[data
 $("#r-text").addEventListener("input", () => $("#r-send").disabled = !$("#r-text").value.trim());
 
 $("#lookup").addEventListener("click", async () => {
-  const no = $("#q-no").value.trim().toUpperCase(), tail = $("#q-tail").value.trim();
+  const name = $("#q-name").value.trim(), digits = $("#q-phone").value.replace(/\D/g, "");
   $("#q-err").classList.add("hidden"); $("#q-result").classList.add("hidden");
+  if (!name || digits.length < 10) { $("#q-err").textContent = "이름과 전화번호를 모두 입력해 주세요."; $("#q-err").classList.remove("hidden"); return; }
+  const btn = $("#lookup"); btn.disabled = true; btn.textContent = "조회 중…";
   try {
-    const r = await post(CONFIG.hook.lookup, { no, tail });
-    const rows = await r.json();
-    if (!Array.isArray(rows) || !rows.length) throw new Error("none");
-    const st = rows.every(x => x.status === "전달") ? "전달" : rows.some(x => x.status === "입금") ? "입금" : "접수";
-    cur = { no: rows[0].no, batch: rows[0].batch, name: rows[0].name, unit: rows[0].unit, items: rows.map(x => `${x.item} ${fmtAmt(x.item, x.qty)}`).join(", "), total: rows.reduce((s,x)=>s+Number(x.amount||0),0), status: st };
-    $("#q-head").textContent = `${cur.no} · ${STATUS[cur.status]}`;
-    $("#q-body").textContent = `${cur.batch} 회차 · ${cur.items} · ${won(cur.total)}`;
+    const r = await post(CONFIG.hook.adminList, { name, phoneKey: digits.replace(/^0/, "") });   // 시트는 맨 앞 0이 빠진 숫자로 저장돼 있어요
+    let rows = []; try { rows = await r.json(); } catch {}
+    rows = expandRows((Array.isArray(rows) ? rows : []).filter(x => x && x.no));
+    if (!rows.length) throw new Error("none");
+    const orders = groupOrders(rows).sort((a,b) => String(b.no).localeCompare(String(a.no)));
+    const batchOf = (no) => { const x = rows.find(r => r.no === no); return x ? x.batch : ""; };
+    const norm = (v) => { const m = String(v||"").match(/(\d{4})\D+(\d{1,2})\D+(\d{1,2})/); return m ? `${m[1]}-${m[2].padStart(2,"0")}-${m[3].padStart(2,"0")}` : ""; };
+    $("#q-list").innerHTML = orders.map(o => { const b = norm(batchOf(o.no)); return `
+      <div class="card" style="margin-bottom:12px">
+        <div style="display:flex;justify-content:space-between;align-items:center"><b style="font-size:17px">${o.no}</b><span class="st ${o.status==="입금"?"paid":o.status==="전달"?"done":""}">${STATUS[o.status]}</span></div>
+        <div style="font-size:14px;margin-top:6px">${b ? `픽업 <b>${dayLabel(b)}</b> ${CONFIG.pickup.time} · ${CONFIG.pickup.place}` : ""}</div>
+        <div style="font-size:14px;margin-top:4px">${o.items.filter(i => !i.startsWith("배달비")).join(", ")}</div>
+        <div style="font-weight:900;margin-top:6px">${won(o.total)}</div>
+      </div>`; }).join("");
     $("#q-result").classList.remove("hidden");
-    $("#q-review").classList.toggle("hidden", cur.status !== "전달"); $("#q-thanks").classList.add("hidden");
+    $("#q-review").classList.add("hidden"); $("#q-thanks").classList.add("hidden");
   } catch (e) {
-    $("#q-err").textContent = "일치하는 주문이 없어요. 주문번호와 뒷자리를 다시 확인해 주세요."; $("#q-err").classList.remove("hidden");
-  }
+    $("#q-err").textContent = "일치하는 주문이 없어요. 주문할 때 쓴 이름과 전화번호를 다시 확인해 주세요."; $("#q-err").classList.remove("hidden");
+  } finally { btn.disabled = false; btn.textContent = "조회"; }
 });
 $("#r-send").addEventListener("click", async () => {
   if (!cur) return;
