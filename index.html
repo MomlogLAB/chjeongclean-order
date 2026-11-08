@@ -365,10 +365,10 @@ const B = batch();
 const left = () => Math.max(0, CONFIG.cap - Object.values(qty).reduce((a,b)=>a+b,0));
 
 function render() {
-  $("#b-label").textContent = `${B.label} 11:00 마감까지`;
+  $("#b-label").textContent = `${pickupDay(B.cutoff)} 픽업 · 오전 11:00 주문 마감까지`;
   $("#b-count").textContent = countdown(B.cutoff);
   const totalQty = Object.values(qty).reduce((a,b)=>a+b,0);
-  $("#b-left").textContent = "";
+  $("#b-left").textContent = "매주 월·금 오후 5:00~5:30 픽업";
   let lastG = "";
   $("#items").innerHTML = PRODUCTS.map(p => (p.group !== lastG ? (lastG = p.group, `<div class="ghead">${p.group}${GROUP_NOTE[p.group] ? `<small>${GROUP_NOTE[p.group]}</small>` : ""}</div>`) : "") + `
     <div class="item">
