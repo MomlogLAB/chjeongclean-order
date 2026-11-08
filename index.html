@@ -418,7 +418,9 @@ $("#submit").addEventListener("click", async () => {
     items, total: items.reduce((s,i)=>s+i.amount,0), status:"접수", at: kst().toISOString(),
   };
   // 시트 1주문 1줄용: 품목 글자 / 포장 계산용 코드(품목코드:그램) / 고기 총 그램
-  o.itemsText = items.map(i => i.line).join(", ");
+  const meat = items.filter(i => i.id !== "fee");
+  o.itemsText = meat.map(i => i.name).join("\n");                                   // 시트 F 품목 (한 줄에 하나씩)
+  o.qtyText = meat.map(i => amtLabel(PRODUCTS.find(p => p.id === i.id), i.qty)).join("\n");   // 시트 G 수량 (품목과 같은 순서)
   o.pack = items.filter(i => i.id !== "fee").map(i => `${i.id}:${i.grams}`).join(",");
   o.grams = items.filter(i => i.id !== "fee" && !unitOf(i).bottle).reduce((s,i) => s + i.grams, 0);   // 병(사골) 제외 고기 g
   sending = true; render(); $("#err").classList.add("hidden");
