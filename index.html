@@ -516,9 +516,10 @@ async function loadAdmin() {
   } catch (e) { return false; }
 }
 // 새 형식(1주문 1줄, pack="b01:300,p03:150")을 품목별 줄로 풀어서 기존 계산을 그대로 쓰기
+const stNorm = (v) => { const t = String(v || "").replace(/\s/g, ""); return t.includes("전달") ? "전달" : t.includes("입금") ? "입금" : "접수"; };   // 시트에 '입금완료' 등으로 적어도 인식
 function expandRows(rows) {
   const out = [];
-  rows.forEach(x => {
+  rows.forEach(x0 => { const x = { ...x0, status: stNorm(x0.status) };
     const pack = String(x.pack || "").trim();
     if (!pack) { out.push(x); return; }            // 예전 형식(품목별 1줄)은 그대로
     const parts = pack.split(",").map(t => t.split(":")).filter(t => t[0]);
