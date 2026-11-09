@@ -312,9 +312,10 @@ const UNIT = {
   b09: { step:280, label:(n)=>`${n*2}팩`, sub:(n)=>`1팩 140g · 총 ${n*280}g` },
   b25: { step:1500, label:(n)=>`${n}병`, sub:(n)=>`${(n*1.5).toLocaleString("ko-KR")}L`, bottle:true },
   b18: { step:1500, label:(n)=>`${n}세트`, sub:(n)=>`육수 ${(n*1.5).toLocaleString("ko-KR")}L + 고기 ${n*150}g`, bottle:true },
+  b08: { min:2 }, p04: { min:2 }, // 모듬: 최소 300g, 이후 150g씩
   b21: { step:600 }, b22: { step:600 }, p15: { step:600 }, p16: { step:600 }, u01: { step:600 }, u02: { step:600 },
 };
-const unitOf = (p) => ({ step:150, ...(UNIT[p.id]||{}) });
+const unitOf = (p) => ({ step:150, min:1, ...(UNIT[p.id]||{}) });
 // 가격: 1근(600g) 기준으로 담는 단위만큼 계산 (예: 150g = 1근 ÷ 4)
 PRODUCTS.forEach(p => { if (p.geun) p.price = Math.round(p.geun * unitOf(p).step / 600); });
 const amtLabel = (p, n) => { const u = unitOf(p); return u.label ? u.label(n) : `${(n*u.step).toLocaleString("ko-KR")}g`; };
@@ -385,7 +386,7 @@ function render() {
       </div>
       <div class="step">
         <button data-id="${p.id}" data-d="-1">−</button>
-        <span class="amt">${qty[p.id] ? `<b>${amtLabel(p, qty[p.id])}</b><small>${amtSub(p, qty[p.id])}</small>` : `<b>0</b><small>${amtLabel(p,1)}부터</small>`}</span>
+        <span class="amt">${qty[p.id] ? `<b>${amtLabel(p, qty[p.id])}</b><small>${amtSub(p, qty[p.id])}</small>` : `<b>0</b><small>${amtLabel(p,unitOf(p).min)}부터</small>`}</span>
         <button class="plus" data-id="${p.id}" data-d="1" >+</button>
       </div>
     </div>`).join("");
@@ -407,7 +408,9 @@ document.addEventListener("click", (e) => {
     d.innerHTML = `<img src="img/${p.id}.jpg" alt="${p.name}"><p>${p.name}${CAP_IDS.includes(p.id) ? ` · ${CAP_TXT.replace("<br>"," · ")}` : ""}<br><small style="font-weight:400">눌러서 닫기</small></p>`; d.addEventListener("click", () => d.remove()); document.body.appendChild(d); return; }
   const b = e.target.closest("[data-id]"); if (!b) return;
   const id = b.dataset.id, d = Number(b.dataset.d);
-  qty[id] = Math.max(0, (qty[id]||0) + d); render();
+  const mn = unitOf(PRODUCTS.find(x => x.id === id)).min, cur = qty[id]||0;
+  let nx = cur + d; if (d > 0 && nx < mn) nx = mn; if (d < 0 && nx < mn) nx = 0;
+  qty[id] = Math.max(0, nx); render();
 });
 ["#f-name","#f-phone","#f-unit"].forEach(s => $(s).addEventListener("input", render));
 setInterval(render, 30000);
