@@ -143,7 +143,7 @@
     <!-- 주문 -->
     <section id="v-order">
       <div class="banner" id="banner"><small id="b-label"></small><b id="b-count"></b><small id="b-left"></small></div>
-      <div class="box" style="font-size:14px;line-height:1.6"><b>매주 월·금 오후 5:00~5:30</b> <b>A블럭 110동 지하 4층</b>에서 받아가세요.<br>픽업일 <b>오전 11시까지 입금 확인된 주문</b>만 그날 픽업, 이후 주문은 다음 픽업일로 넘어가요. 배달비는 <b>15만원 미만 주문만 3,000원</b> (15만원 이상 무료).<br><b>고기는 150g(1인분) 단위</b>로 담겨요. 갈비류는 600g, 사골육수는 1병(1.5L) 단위예요.<br>스테이크는 1cm부터 — 더 두껍게 원하시면 요청사항에 적어주세요.<br><b>개별 진공 포장</b>을 원하시면 요청사항에 적어주세요.</div>
+      <div class="box" style="font-size:14px;line-height:1.6"><b>매주 월·금 오후 5:00~5:30</b> <b>A블럭 110동 지하 4층</b>에서 받아가세요.<br>픽업일 <b>오전 11시까지 입금 확인된 주문</b>만 그날 픽업, 이후 주문은 다음 픽업일로 넘어가요. 배달비는 <b>15만원 미만 주문만 3,000원</b> (15만원 이상 무료).<br><b>고기는 150g(1인분) 단위</b>로 담겨요. 갈비류는 600g, 사골육수는 1병(1.5L) 단위예요.<br>스테이크, 구이용 원하시는 두께는 요청사항에 적어주세요.<br><b>개별 진공 포장</b>을 원하시면 요청사항에 적어주세요.</div>
       <h2>메뉴</h2>
       <div id="items"></div>
       <div style="margin-top:24px">
@@ -249,6 +249,8 @@ const CONFIG = {
 // 구이용 소고기 사진 밑 안내 문구
 const CAP_IDS = ["b27","b08","b01","b04","b12","b13"];
 const CAP_TXT = "0.5cm 두께<br>약 200g (±10g)";
+const CAP_OVR = { b08: "0.5cm 두께<br>약 500g (±10g)" }; // 사진별 문구 따로
+const capOf = (id) => CAP_OVR[id] || CAP_TXT;
 const PHOTOS = ["b29","b27","b21","b08","b01","b04","b12","b13","b03","b06","b11","b19","b09","p01","p02","p03","p12","p13"];
 const PRODUCTS = [
   { id:"b08", group:"한우 1+/1++ · 구이용", name:"한우 모듬구이 (업진살·부채살·아롱구이)", price:0, per100:13500, geun:81000 },
@@ -303,7 +305,7 @@ const PRODUCTS = [
   { id:"u02", group:"LA갈비 · 미국산", name:"LA갈비 탕용", price:0, per100:4800, geun:28800 },
 ];
 const GROUP_NOTE = {
-  "한우 1+/1++ · 구이용": "등급은 그날 들어온 소에 따라 1+ 또는 1++. 스테이크는 1cm부터, 더 두껍게 원하시면 요청사항에 적어주세요.",
+  "한우 1+/1++ · 구이용": "등급은 그날 들어온 소에 따라 1+ 또는 1++. 스테이크, 구이용 원하시는 두께는 요청사항에 적어주세요.",
   "한우 1+/1++ · 육회·육사시미": "픽업 당일 손질해요. 받으신 날 바로 드세요 (냉장 보관).",
   "한우 1+/1++ · 갈비": "갈비는 600g 단위예요.",
   "한돈 · 갈비": "갈비는 600g 단위예요.",
@@ -381,7 +383,7 @@ function render() {
   let lastG = "";
   $("#items").innerHTML = PRODUCTS.map(p => (p.group !== lastG ? (lastG = p.group, `<div class="ghead">${p.group}${GROUP_NOTE[p.group] ? `<small>${GROUP_NOTE[p.group]}</small>` : ""}</div>`) : "") + `
     <div class="item">
-      ${PHOTOS.includes(p.id) ? `<div class="tcol"><button class="thumb" data-zoom="${p.id}" aria-label="${p.name} 사진 크게 보기"><img src="img/${p.id}.jpg" alt="${p.name}" loading="lazy"></button>${CAP_IDS.includes(p.id) ? `<small class="tcap">${CAP_TXT}</small>` : ""}</div>` : ""}
+      ${PHOTOS.includes(p.id) ? `<div class="tcol"><button class="thumb" data-zoom="${p.id}" aria-label="${p.name} 사진 크게 보기"><img src="img/${p.id}.jpg" alt="${p.name}" loading="lazy"></button>${CAP_IDS.includes(p.id) ? `<small class="tcap">${capOf(p.id)}</small>` : ""}</div>` : ""}
       <div class="info">
         <div class="name">${p.name}</div>${p.note ? `<div class="inote">${p.note}</div>` : ""}
         <div class="price">${p.geun ? `<span class="p100">100g ${won(p.per100)}${p.flat ? ` + ${won(p.flat)}` : ""}</span><small class="geun">${p.flat ? `양에 상관없이 ${won(p.flat)} 추가` : `1근 ${won(p.geun)}`}</small>` : p.price ? won(p.price) : '<span class="sise">시세 · 주문 후 금액 안내</span>'}</div>
@@ -407,7 +409,7 @@ function render() {
 document.addEventListener("click", (e) => {
   const z = e.target.closest("[data-zoom]");
   if (z) { const p = PRODUCTS.find(x => x.id === z.dataset.zoom); const d = document.createElement("div"); d.className = "zoom";
-    d.innerHTML = `<img src="img/${p.id}.jpg" alt="${p.name}"><p>${p.name}${CAP_IDS.includes(p.id) ? ` · ${CAP_TXT.replace("<br>"," · ")}` : ""}<br><small style="font-weight:400">눌러서 닫기</small></p>`; d.addEventListener("click", () => d.remove()); document.body.appendChild(d); return; }
+    d.innerHTML = `<img src="img/${p.id}.jpg" alt="${p.name}"><p>${p.name}${CAP_IDS.includes(p.id) ? ` · ${capOf(p.id).replace("<br>"," · ")}` : ""}<br><small style="font-weight:400">눌러서 닫기</small></p>`; d.addEventListener("click", () => d.remove()); document.body.appendChild(d); return; }
   const b = e.target.closest("[data-id]"); if (!b) return;
   const id = b.dataset.id, d = Number(b.dataset.d);
   const mn = unitOf(PRODUCTS.find(x => x.id === id)).min, cur = qty[id]||0;
