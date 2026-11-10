@@ -160,6 +160,7 @@
       <div class="total"><span class="q" id="t-qty">0개 품목</span><span class="w" id="t-won">0원</span></div>
       <p class="note" id="t-fee" style="margin:-6px 0 12px;text-align:right"></p>
       <div class="policy"><b>꼭 읽어주세요</b><br>· 고기는 신선식품이라 픽업 시간에 연락 없이 안 오시면 다음 날까지만 보관 후 폐기하며, 환불되지 않아요.<br>· 못 오실 것 같으면 미리 오픈채팅으로 말씀해 주세요 → 대리 수령이나 다음 회차로 바꿔드려요.<br>· 받으신 고기 상태에 문제가 있으면 사진과 함께 연락 주세요. 교환·환불해 드립니다.</div>
+      <div class="box" style="margin-bottom:12px"><div style="font-weight:800;font-size:14px;color:var(--g)">입금 계좌 (주문하기를 누른 뒤 입금해 주세요)</div><div class="acctbox"></div></div>
       <button class="btn" id="submit" disabled>주문하기</button>
       <p class="err hidden" id="err"></p>
       <p class="note">연락처·동호수는 전달 목적으로만 쓰고 전달 후 30일 안에 지웁니다.</p>
@@ -361,6 +362,7 @@ function applyCatalog(r) {
   if (n) CATALOG_AT = Date.now();
   return n > 0;
 }
+const acctHtml = () => `<div style="font-weight:700;font-size:14px;margin-top:6px">${CONFIG.bankName}</div><div class="acct"><b>${CONFIG.bankAccount}</b><button type="button" class="cp-acct">계좌 복사</button></div><div style="font-size:14px">예금주 ${CONFIG.bankHolder}</div>`;
 const esc = (t) => String(t).replace(/[&<>"]/g, m => ({ "&":"&amp;", "<":"&lt;", ">":"&gt;", '"':"&quot;" }[m]));
 
 const $ = (s) => document.querySelector(s);
@@ -442,7 +444,9 @@ function render() {
   $("#submit").disabled = !valid;
   $("#submit").textContent = sending ? "전송 중…" : `${B.label} 회차로 주문하기`;
 }
-document.addEventListener("click", (e) => {
+document.addEventListener("click", async (e) => {
+  const cp = e.target.closest(".cp-acct");
+  if (cp) { try { await navigator.clipboard.writeText(CONFIG.bankAccount); cp.textContent = "복사됨"; setTimeout(() => cp.textContent = "계좌 복사", 1500); } catch { prompt("계좌번호를 복사하세요", CONFIG.bankAccount); } return; }
   const z = e.target.closest("[data-zoom]");
   if (z) { const p = PRODUCTS.find(x => x.id === z.dataset.zoom); const d = document.createElement("div"); d.className = "zoom";
     d.innerHTML = `<img src="img/${p.id}.jpg" alt="${p.name}"><p>${p.name}${CAP_IDS.includes(p.id) ? ` · ${capOf(p.id).replace("<br>"," · ")}` : ""}<br><small style="font-weight:400">눌러서 닫기</small></p>`; d.addEventListener("click", () => d.remove()); document.body.appendChild(d); return; }
@@ -457,6 +461,7 @@ document.addEventListener("click", (e) => {
 setInterval(render, 30000);
 /* 메뉴판 반영: 처음 열 때 + 화면으로 돌아올 때(1분 이상 지났으면) */
 const syncCatalog = () => loadCatalog(ok => { if (!ok) return; PRODUCTS.forEach(p => { if (p.status === "품절") delete qty[p.id]; }); render(); });
+document.querySelectorAll(".acctbox").forEach(el => el.innerHTML = acctHtml());
 syncCatalog();
 document.addEventListener("visibilitychange", () => { if (!document.hidden && Date.now() - CATALOG_AT > 60000) syncCatalog(); });
 
@@ -484,7 +489,7 @@ $("#submit").addEventListener("click", async () => {
     $("#d-no").textContent = o.no; $("#d-sum").textContent = `${o.batch} 회차 · ${won(o.total)}`;
     $("#d-bankname").textContent = CONFIG.bankName; $("#d-acct").textContent = CONFIG.bankAccount; $("#d-holder").textContent = "예금주 " + CONFIG.bankHolder; $("#d-name").textContent = o.name;
     LAST = o; $("#d-paid").disabled = false; $("#d-paid-ok").classList.add("hidden"); $("#d-pickup").textContent = "'내 주문 확인'에서 이름과 전화번호로 주문 상태를 볼 수 있어요.";
-    $("#v-order").classList.add("hidden"); $("#v-done").classList.remove("hidden"); showPickup();
+    $("#v-order").classList.add("hidden"); $("#v-done").classList.remove("hidden"); showPickup(); window.scrollTo(0, 0);
   } catch (e) {
     $("#err").textContent = "주문 전송이 안 됐어요. 잠시 후 다시 눌러주세요."; $("#err").classList.remove("hidden");
   } finally { sending = false; render(); }
@@ -532,6 +537,7 @@ $("#lookup").addEventListener("click", async () => {
         <div style="font-size:14px;margin-top:6px">${b ? `픽업 <b>${dayLabel(b)}</b> ${CONFIG.pickup.time} · ${CONFIG.pickup.place}` : ""}</div>
         <div style="font-size:14px;margin-top:4px">${o.items.filter(i => !i.startsWith("배달비")).join(", ")}</div>
         <div style="font-weight:900;margin-top:6px">${won(o.total)}</div>
+        ${o.status === "접수" ? `<div style="margin-top:10px;padding-top:10px;border-top:1px solid var(--line)"><div style="font-weight:800;font-size:13px;color:var(--r)">아직 입금 확인 전이에요. 아래 계좌로 입금해 주세요.</div>${acctHtml()}</div>` : ""}
       </div>`; }).join("");
     $("#q-result").classList.remove("hidden");
     $("#q-review").classList.add("hidden"); $("#q-thanks").classList.add("hidden");
