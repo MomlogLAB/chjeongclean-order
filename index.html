@@ -124,6 +124,11 @@
   .smsbtn.ghost { background:#fff; color:var(--g); border:2px solid var(--g); }
   .price .p100 { font-size:14px; }
   .price small.geun { display:block; font-size:12px; font-weight:700; color:var(--grey); }
+  .bdg { display:inline-block; font-size:11px; font-weight:900; padding:2px 7px; border-radius:20px; margin-left:6px; vertical-align:middle; }
+  .bdg.rs { background:#FFF1CC; color:#8A5A00; } .bdg.so { background:#ECECEC; color:#666; }
+  .rnote { font-size:12px; font-weight:700; color:#8A5A00; margin-top:2px; }
+  .item.soldout .thumb, .item.soldout .info { opacity:.45; }
+  .item.soldout .step button { border-color:#CCC; color:#BBB; background:#F4F4F4; }
   .inote { font-size:13px; font-weight:700; color:var(--g); margin-top:2px; }
 </style>
 </head>
@@ -241,6 +246,7 @@ const CONFIG = {
     setStatus: "https://hook.us2.make.com/55ely21ikewr6nkdyttu4h5xxgty532v",
     paid: "https://hook.us2.make.com/q5lk7cfuhbp6qoymaki498bi54iflplp",
   },
+  catalogSheet: "1kiq6_gzYEv5H2StF-aNZvbgISLvsvQb72BPZRmd0DtQ",   // 메뉴판 시트 (가격·설명·판매중/예약/품절) — 사장님 관리 페이지(admin.html)에서 수정
   // 관리자 비밀번호 — Make 시나리오 5·6의 필터 값과 같아야 함 (기본 2580)
 };
 // 품목 — 시트 Products 탭과 이름이 글자 하나까지 같아야 집계됨
@@ -327,6 +333,36 @@ const amtSub = (p, n) => { const u = unitOf(p); if (u.sub) return u.sub(n); cons
 const fmtAmt = (name, v) => { if (name === "배달비") return ""; if (/^사골육수[+&]/.test(name)) return `${Number(v)/1500}세트`; if (/^사골육수/.test(name)) return `${Number(v)/1500}병`; if (String(name).startsWith("팩 국거리")) { const g = Number(v), per = g % 280 === 0 ? 140 : 180; return `${g/per}팩 (${g}g)`; } const p = PRODUCTS.find(x=>x.name===name); return p && unitOf(p).bottle ? `${Number(v)/1500}병` : `${Number(v).toLocaleString("ko-KR")}g`; };
 /* ============================================ */
 
+/* 메뉴판 시트 읽기 (가격·설명·상태). 실패하면 위에 적힌 기본값 그대로 사용 */
+let CATALOG_AT = 0;
+function loadCatalog(done) {
+  if (!CONFIG.catalogSheet) return done && done(false);
+  const fn = "__cat" + Date.now(), sc = document.createElement("script");
+  const fin = (ok) => { clearTimeout(tm); delete window[fn]; sc.remove(); done && done(ok); };
+  const tm = setTimeout(() => fin(false), 8000);
+  window[fn] = (r) => { let ok = false; try { ok = applyCatalog(r); } catch (e) {} fin(ok); };
+  sc.onerror = () => fin(false);
+  sc.src = `https://docs.google.com/spreadsheets/d/${CONFIG.catalogSheet}/gviz/tq?tqx=out:json;responseHandler:${fn};reqId:${Date.now() % 100000}&headers=1`;
+  document.head.appendChild(sc);
+}
+function applyCatalog(r) {
+  if (!r || r.status !== "ok" || !r.table) return false;
+  let n = 0;
+  r.table.rows.forEach(row => {
+    const c = (row.c || []).map(x => (x && x.v != null) ? x.v : "");
+    const p = PRODUCTS.find(x => x.id === String(c[0]).trim()); if (!p) return;
+    const per100 = Number(c[3]), geun = Number(c[4]), price = Number(c[5]);
+    if (p.geun && geun > 0) { p.geun = Math.round(geun); p.per100 = per100 > 0 ? Math.round(per100) : Math.round(geun / 6); p.price = Math.round(p.geun * unitOf(p).step / 600); }
+    else if (!p.geun && price > 0) p.price = Math.round(price);
+    const st = String(c[6] || "").trim(); p.status = st.includes("품절") ? "품절" : st.includes("예약") ? "예약" : "판매중";
+    p.note = String(c[7] || "").trim();
+    n++;
+  });
+  if (n) CATALOG_AT = Date.now();
+  return n > 0;
+}
+const esc = (t) => String(t).replace(/[&<>"]/g, m => ({ "&":"&amp;", "<":"&lt;", ">":"&gt;", '"':"&quot;" }[m]));
+
 const $ = (s) => document.querySelector(s);
 const won = (n) => n.toLocaleString("ko-KR") + "원";
 const STATUS = { 접수:"입금 대기", 입금:"입금 확인", 전달:"전달 완료" };
@@ -382,16 +418,16 @@ function render() {
   $("#b-left").textContent = "매주 월·금 오후 5:00~5:30 픽업";
   let lastG = "";
   $("#items").innerHTML = PRODUCTS.map(p => (p.group !== lastG ? (lastG = p.group, `<div class="ghead">${p.group}${GROUP_NOTE[p.group] ? `<small>${GROUP_NOTE[p.group]}</small>` : ""}</div>`) : "") + `
-    <div class="item">
+    <div class="item${p.status === "품절" ? " soldout" : ""}">
       ${PHOTOS.includes(p.id) ? `<div class="tcol"><button class="thumb" data-zoom="${p.id}" aria-label="${p.name} 사진 크게 보기"><img src="img/${p.id}.jpg" alt="${p.name}" loading="lazy"></button>${CAP_IDS.includes(p.id) ? `<small class="tcap">${capOf(p.id)}</small>` : ""}</div>` : ""}
       <div class="info">
-        <div class="name">${p.name}</div>${p.note ? `<div class="inote">${p.note}</div>` : ""}
+        <div class="name">${p.name}${p.status === "예약" ? '<span class="bdg rs">예약</span>' : p.status === "품절" ? '<span class="bdg so">품절</span>' : ""}</div>${p.note ? `<div class="inote">${esc(p.note)}</div>` : ""}${p.status === "예약" ? '<div class="rnote">예약 상품 · 입고되면 안내드려요</div>' : ""}
         <div class="price">${p.geun ? `<span class="p100">100g ${won(p.per100)}${p.flat ? ` + ${won(p.flat)}` : ""}</span><small class="geun">${p.flat ? `양에 상관없이 ${won(p.flat)} 추가` : `1근 ${won(p.geun)}`}</small>` : p.price ? won(p.price) : '<span class="sise">시세 · 주문 후 금액 안내</span>'}</div>
       </div>
       <div class="step">
         <button data-id="${p.id}" data-d="-1">−</button>
-        <span class="amt">${qty[p.id] ? `<b>${amtLabel(p, qty[p.id])}</b><small>${amtSub(p, qty[p.id])}</small>` : `<b>0</b><small>${amtLabel(p,unitOf(p).min)}부터</small>`}</span>
-        <button class="plus" data-id="${p.id}" data-d="1" >+</button>
+        <span class="amt">${p.status === "품절" ? `<b style="color:#999">품절</b><small>다음에 만나요</small>` : qty[p.id] ? `<b>${amtLabel(p, qty[p.id])}</b><small>${amtSub(p, qty[p.id])}</small>` : `<b>0</b><small>${amtLabel(p,unitOf(p).min)}부터</small>`}</span>
+        <button class="plus" data-id="${p.id}" data-d="1" ${p.status === "품절" ? "disabled" : ""}>+</button>
       </div>
     </div>`).join("");
   const items = PRODUCTS.filter(p => (qty[p.id]||0) > 0);
@@ -412,17 +448,23 @@ document.addEventListener("click", (e) => {
     d.innerHTML = `<img src="img/${p.id}.jpg" alt="${p.name}"><p>${p.name}${CAP_IDS.includes(p.id) ? ` · ${capOf(p.id).replace("<br>"," · ")}` : ""}<br><small style="font-weight:400">눌러서 닫기</small></p>`; d.addEventListener("click", () => d.remove()); document.body.appendChild(d); return; }
   const b = e.target.closest("[data-id]"); if (!b) return;
   const id = b.dataset.id, d = Number(b.dataset.d);
-  const mn = unitOf(PRODUCTS.find(x => x.id === id)).min, cur = qty[id]||0;
+  const pp = PRODUCTS.find(x => x.id === id); if (pp.status === "품절") return;
+  const mn = unitOf(pp).min, cur = qty[id]||0;
   let nx = cur + d; if (d > 0 && nx < mn) nx = mn; if (d < 0 && nx < mn) nx = 0;
   qty[id] = Math.max(0, nx); render();
 });
 ["#f-name","#f-phone","#f-unit"].forEach(s => $(s).addEventListener("input", render));
 setInterval(render, 30000);
+/* 메뉴판 반영: 처음 열 때 + 화면으로 돌아올 때(1분 이상 지났으면) */
+const syncCatalog = () => loadCatalog(ok => { if (!ok) return; PRODUCTS.forEach(p => { if (p.status === "품절") delete qty[p.id]; }); render(); });
+syncCatalog();
+document.addEventListener("visibilitychange", () => { if (!document.hidden && Date.now() - CATALOG_AT > 60000) syncCatalog(); });
 
 /* 주문 전송 */
 $("#submit").addEventListener("click", async () => {
   const items = PRODUCTS.filter(p => (qty[p.id]||0) > 0).map(p => { const n = qty[p.id], g = n*unitOf(p).step;
-    return { id:p.id, name:p.name, price:p.price, qty:n, grams:g, amount:p.price*n + (p.flat||0), line:`${p.name} ${amtLabel(p,n)}` }; });
+    const nm = p.name + (p.status === "예약" ? " [예약]" : "");
+    return { id:p.id, name:nm, price:p.price, qty:n, grams:g, amount:p.price*n + (p.flat||0), line:`${nm} ${amtLabel(p,n)}` }; });
   const F = feeInfo(items.reduce((s,i)=>s+i.amount,0), items.some(i => !i.price), items.length);
   if (items.length) items.push({ id:"fee", name:"배달비", price:F.amount, qty:1, grams:0, amount:F.amount, line:`배달비 ${F.short}` });
   const o = {

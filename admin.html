@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<title>청정한우 사장님</title>
+<meta name="robots" content="noindex">
+<meta name="theme-color" content="#1F6B4E">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="청정한우 사장님">
+<style>
+  :root { --g:#1F6B4E; --gd:#17523C; --r:#D6402B; --mint:#EEF6F1; --ink:#1C2B24; --grey:#5B6B63; --line:#E3ECE7; --bg:#F4F7F5; --amber:#B97800; --amberbg:#FFF1CC; }
+  * { box-sizing:border-box; }
+  body { margin:0; background:var(--bg); color:var(--ink); font-family:'Noto Sans KR','Apple SD Gothic Neo',system-ui,sans-serif; -webkit-font-smoothing:antialiased; }
+  .wrap { max-width:520px; margin:0 auto; min-height:100vh; }
+  .hidden { display:none !important; }
+  button { font-family:inherit; cursor:pointer; }
+  input { font-family:inherit; }
+
+  /* 로그인 */
+  .login { padding:72px 28px 0; text-align:center; }
+  .login .logo { display:inline-block; background:var(--g); color:#fff; font-weight:900; font-size:15px; padding:6px 12px; border-radius:6px; }
+  .login h1 { font-size:26px; margin:14px 0 6px; }
+  .login p { color:var(--grey); margin:0 0 28px; font-size:15px; }
+  .login input { width:100%; font-size:28px; letter-spacing:10px; text-align:center; padding:14px; border:2px solid var(--line); border-radius:14px; outline:none; background:#fff; }
+  .login input:focus { border-color:var(--g); }
+  .bigbtn { width:100%; margin-top:14px; padding:16px; border:0; border-radius:14px; background:var(--g); color:#fff; font-size:17px; font-weight:900; }
+  .bigbtn:disabled { opacity:.5; }
+  .err { color:var(--r); font-weight:700; font-size:14px; margin-top:12px; min-height:20px; }
+
+  /* 상단 */
+  .top { background:var(--g); color:#fff; padding:18px 18px 16px; position:sticky; top:0; z-index:5; }
+  .top .row { display:flex; justify-content:space-between; align-items:center; }
+  .top h1 { margin:0; font-size:19px; font-weight:900; }
+  .top h1 small { font-weight:700; font-size:13px; opacity:.8; margin-left:6px; }
+  .top a, .top button.link { color:#fff; font-size:13px; font-weight:700; text-decoration:none; background:rgba(255,255,255,.16); border:0; padding:7px 10px; border-radius:20px; margin-left:6px; }
+  .stats { display:flex; gap:8px; margin-top:14px; }
+  .stat { flex:1; background:rgba(255,255,255,.14); border:2px solid transparent; border-radius:12px; padding:9px 4px; text-align:center; color:#fff; }
+  .stat.on { background:#fff; color:var(--g); }
+  .stat b { display:block; font-size:20px; font-weight:900; line-height:1.1; }
+  .stat span { font-size:12px; font-weight:700; opacity:.9; }
+
+  .tools { padding:12px 16px 4px; }
+  .tools input { width:100%; padding:12px 14px; font-size:16px; border:1px solid var(--line); border-radius:12px; outline:none; background:#fff; }
+  .tools input:focus { border-color:var(--g); }
+  .hint { font-size:13px; color:var(--grey); padding:8px 18px 0; line-height:1.5; }
+
+  .ghead { margin:18px 16px 8px; font-size:14px; font-weight:900; color:var(--g); }
+  .card { background:#fff; margin:0 12px 10px; border-radius:16px; padding:14px; border:2px solid transparent; box-shadow:0 1px 3px rgba(0,0,0,.05); }
+  .card.dirty { border-color:var(--g); }
+  .card.st-품절 { background:#FAFAFA; }
+  .card .nm { font-size:17px; font-weight:900; display:flex; align-items:center; gap:8px; }
+  .card.st-품절 .nm { color:#8A8A8A; }
+  .chg { font-size:11px; font-weight:900; background:var(--g); color:#fff; padding:2px 7px; border-radius:20px; }
+  .seg { display:flex; margin-top:10px; background:var(--bg); border-radius:12px; padding:4px; gap:4px; }
+  .seg button { flex:1; border:0; background:transparent; padding:10px 0; border-radius:9px; font-size:15px; font-weight:800; color:var(--grey); }
+  .seg button.on[data-s="판매중"] { background:var(--g); color:#fff; }
+  .seg button.on[data-s="예약"] { background:#F2B705; color:#3A2A00; }
+  .seg button.on[data-s="품절"] { background:#555; color:#fff; }
+  .prices { display:flex; gap:10px; margin-top:12px; }
+  .fld { flex:1; }
+  .fld label { display:block; font-size:12px; font-weight:800; color:var(--grey); margin-bottom:4px; }
+  .fld .in { display:flex; align-items:center; border:1px solid var(--line); border-radius:10px; padding:0 10px; background:#fff; }
+  .fld .in:focus-within { border-color:var(--g); }
+  .fld input { width:100%; border:0; outline:none; font-size:17px; font-weight:800; padding:10px 0; text-align:right; background:transparent; color:var(--ink); }
+  .fld .in span { font-size:14px; color:var(--grey); font-weight:700; margin-left:4px; }
+  .fld.desc input { text-align:left; font-weight:600; font-size:15px; }
+  .cust { font-size:12px; color:var(--grey); margin-top:6px; }
+
+  .savebar { position:fixed; left:50%; transform:translateX(-50%); bottom:0; width:100%; max-width:520px; padding:12px 14px calc(12px + env(safe-area-inset-bottom)); background:#fff; border-top:1px solid var(--line); box-shadow:0 -6px 20px rgba(0,0,0,.08); display:flex; gap:10px; z-index:6; }
+  .savebar button { border:0; border-radius:14px; font-size:16px; font-weight:900; padding:15px; }
+  .savebar .undo { background:var(--bg); color:var(--grey); flex:0 0 96px; }
+  .savebar .save { background:var(--r); color:#fff; flex:1; }
+  .savebar button:disabled { opacity:.5; }
+  .toast { position:fixed; left:50%; transform:translateX(-50%); bottom:96px; background:var(--ink); color:#fff; padding:12px 18px; border-radius:24px; font-size:14px; font-weight:700; z-index:9; max-width:90%; text-align:center; }
+  .toast.bad { background:var(--r); }
+  .empty { text-align:center; color:var(--grey); padding:40px 20px; font-size:15px; }
+  main { padding-bottom:110px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <!-- 로그인 -->
+  <section id="v-login" class="login">
+    <span class="logo">청정한우</span>
+    <h1>사장님 페이지</h1>
+    <p>사다드림 메뉴를 관리하는 곳이에요</p>
+    <input id="pin" type="password" inputmode="numeric" maxlength="8" placeholder="····" autocomplete="off">
+    <button class="bigbtn" id="login-btn">들어가기</button>
+    <div class="err" id="login-err"></div>
+  </section>
+
+  <!-- 메뉴 관리 -->
+  <section id="v-app" class="hidden">
+    <div class="top">
+      <div class="row">
+        <h1>사장님 페이지<small>메뉴 관리</small></h1>
+        <div><a href="./" target="_blank">손님 화면</a><button class="link" id="logout">나가기</button></div>
+      </div>
+      <div class="stats">
+        <button class="stat on" data-f="전체"><b id="n-all">0</b><span>전체</span></button>
+        <button class="stat" data-f="판매중"><b id="n-on">0</b><span>판매중</span></button>
+        <button class="stat" data-f="예약"><b id="n-rs">0</b><span>예약</span></button>
+        <button class="stat" data-f="품절"><b id="n-so">0</b><span>품절</span></button>
+      </div>
+    </div>
+    <div class="tools"><input id="q" placeholder="🔍 고기 이름으로 찾기 (예: 살치)"></div>
+    <div class="hint">상태·가격·설명을 바꾸고 아래 <b>저장하기</b>를 누르면 손님 화면에 반영돼요.</div>
+    <main id="list"><div class="empty">메뉴판을 불러오는 중…</div></main>
+    <div class="savebar hidden" id="savebar">
+      <button class="undo" id="undo">되돌리기</button>
+      <button class="save" id="save">저장하기</button>
+    </div>
+  </section>
+  <div class="toast hidden" id="toast"></div>
+</div>
+
+<script>
+const CFG = {
+  sheet: "1kiq6_gzYEv5H2StF-aNZvbgISLvsvQb72BPZRmd0DtQ",                          // 메뉴판 시트
+  hook: "https://hook.us2.make.com/1vqiu1h0djvu4x23fa3kgospq7h9cjwj",            // Make 6번 시나리오 (관리자)
+  step: { b09:280, b25:1500, b18:1500, b21:600, b22:600, p15:600, p16:600, u01:600, u02:600 },   // 담는 단위(g), 기본 150
+};
+const $ = (s) => document.querySelector(s);
+const won = (n) => Number(n).toLocaleString("ko-KR") + "원";
+const esc = (t) => String(t).replace(/[&<>"]/g, m => ({ "&":"&amp;", "<":"&lt;", ">":"&gt;", '"':"&quot;" }[m]));
+let PIN = "", ROWS = [], ORIG = {}, FILTER = "전체", busy = false;
+
+function toast(msg, bad) { const t = $("#toast"); t.textContent = msg; t.className = "toast" + (bad ? " bad" : ""); clearTimeout(toast.t); toast.t = setTimeout(() => t.classList.add("hidden"), 3500); }
+
+async function call(payload) {
+  const r = await fetch(CFG.hook, { method:"POST", headers:{ "Content-Type":"application/json" }, body: JSON.stringify(payload) });
+  const text = await r.text();
+  try { return JSON.parse(text); } catch (e) { return null; }   // 비밀번호가 틀리면 Make가 JSON 대신 'Accepted'를 돌려줌
+}
+
+/* 메뉴판 시트 읽기 */
+function loadSheet() {
+  return new Promise((resolve, reject) => {
+    const fn = "__cat" + Date.now(), sc = document.createElement("script");
+    const fin = (v, e) => { clearTimeout(tm); delete window[fn]; sc.remove(); e ? reject(e) : resolve(v); };
+    const tm = setTimeout(() => fin(null, new Error("timeout")), 10000);
+    window[fn] = (r) => {
+      if (!r || r.status !== "ok" || !r.table) return fin(null, new Error("bad"));
+      const rows = r.table.rows.map(row => (row.c || []).map(x => (x && x.v != null) ? x.v : ""))
+        .filter(c => /^[a-z]\d+$/.test(String(c[0]).trim()))
+        .map(c => { const st = String(c[6] || ""); return { id:String(c[0]).trim(), group:String(c[1]||""), name:String(c[2]||""), per100:Number(c[3])||0, geun:Number(c[4])||0, price:Number(c[5])||0, gram:(Number(c[4])||0) > 0,
+          status: st.includes("품절") ? "품절" : st.includes("예약") ? "예약" : "판매중", desc:String(c[7]||"").trim() }; });
+      fin(rows);
+    };
+    sc.onerror = () => fin(null, new Error("load"));
+    sc.src = `https://docs.google.com/spreadsheets/d/${CFG.sheet}/gviz/tq?tqx=out:json;responseHandler:${fn};reqId:${Date.now() % 100000}&headers=1`;
+    document.head.appendChild(sc);
+  });
+}
+const key = (r) => [r.per100, r.geun, r.price, r.status, r.desc].join("|");
+const isDirty = (r) => ORIG[r.id] !== key(r);
+const dirtyCount = () => ROWS.filter(isDirty).length;
+
+async function refresh() {
+  try { ROWS = await loadSheet(); ORIG = {}; ROWS.forEach(r => ORIG[r.id] = key(r)); render(); }
+  catch (e) { $("#list").innerHTML = '<div class="empty">메뉴판을 불러오지 못했어요.<br>인터넷 연결을 확인하고 새로고침해 주세요.</div>'; }
+}
+
+function custPrice(r) {   // 손님 화면에 계산되는 값
+  if (!r.gram || !r.geun) return "";
+  const st = CFG.step[r.id] || 150;
+  return `손님 화면: ${st.toLocaleString("ko-KR")}g에 ${won(Math.round(r.geun * st / 600))}`;
+}
+
+function card(r) {
+  const isG = r.gram;
+  return `<div class="card st-${r.status}${isDirty(r) ? " dirty" : ""}" data-id="${r.id}">
+    <div class="nm">${esc(r.name)}${isDirty(r) ? '<span class="chg">바뀜</span>' : ""}</div>
+    <div class="seg">${["판매중","예약","품절"].map(s => `<button data-s="${s}" class="${r.status === s ? "on" : ""}">${s}</button>`).join("")}</div>
+    <div class="prices">${isG
+      ? `<div class="fld"><label>100g 가격</label><div class="in"><input inputmode="numeric" data-k="per100" value="${r.per100 || ""}"><span>원</span></div></div>
+         <div class="fld"><label>1근(600g) 가격</label><div class="in"><input inputmode="numeric" data-k="geun" value="${r.geun || ""}"><span>원</span></div></div>`
+      : `<div class="fld"><label>가격 (1개 · 1세트)</label><div class="in"><input inputmode="numeric" data-k="price" value="${r.price || ""}"><span>원</span></div></div>`}</div>
+    ${isG ? `<div class="cust">${custPrice(r)}</div>` : ""}
+    <div class="prices"><div class="fld desc"><label>고기 설명 (손님 화면 상품명 아래에 보여요)</label><div class="in"><input data-k="desc" maxlength="60" placeholder="예: 냉동 / 오늘 들어온 1++ / 마블링 좋아요" value="${esc(r.desc)}"></div></div></div>
+  </div>`;
+}
+
+function render() {
+  $("#n-all").textContent = ROWS.length;
+  $("#n-on").textContent = ROWS.filter(r => r.status === "판매중").length;
+  $("#n-rs").textContent = ROWS.filter(r => r.status === "예약").length;
+  $("#n-so").textContent = ROWS.filter(r => r.status === "품절").length;
+  document.querySelectorAll(".stat").forEach(b => b.classList.toggle("on", b.dataset.f === FILTER));
+  const q = $("#q").value.trim();
+  const list = ROWS.filter(r => (FILTER === "전체" || r.status === FILTER) && (!q || r.name.includes(q)));
+  let g = "";
+  $("#list").innerHTML = list.length ? list.map(r => (r.group !== g ? (g = r.group, `<div class="ghead">${esc(r.group)}</div>`) : "") + card(r)).join("") : '<div class="empty">해당하는 메뉴가 없어요.</div>';
+  bar();
+}
+function bar() {
+  const n = dirtyCount();
+  $("#savebar").classList.toggle("hidden", !n);
+  $("#save").textContent = busy ? "저장 중…" : `${n}개 바뀜 · 저장하기`;
+  $("#save").disabled = busy; $("#undo").disabled = busy;
+}
+function touch(el, r) {   // 카드 한 장만 표시 갱신 (입력 중 커서 유지)
+  const c = el.closest(".card"); c.className = `card st-${r.status}${isDirty(r) ? " dirty" : ""}`;
+  const nm = c.querySelector(".nm"), chg = nm.querySelector(".chg");
+  if (isDirty(r) && !chg) nm.insertAdjacentHTML("beforeend", '<span class="chg">바뀜</span>'); if (!isDirty(r) && chg) chg.remove();
+  const cu = c.querySelector(".cust"); if (cu) cu.textContent = custPrice(r);
+  bar();
+}
+
+$("#list").addEventListener("click", (e) => {
+  const b = e.target.closest(".seg button"); if (!b) return;
+  const r = ROWS.find(x => x.id === b.closest(".card").dataset.id); r.status = b.dataset.s; render();
+});
+$("#list").addEventListener("input", (e) => {
+  const k = e.target.dataset.k; if (!k) return;
+  const c = e.target.closest(".card"), r = ROWS.find(x => x.id === c.dataset.id);
+  if (k === "desc") r.desc = e.target.value.trim();
+  else {
+    const v = Number(String(e.target.value).replace(/[^0-9]/g, "")) || 0; e.target.value = v || "";
+    if (k === "per100") { r.per100 = v; r.geun = v * 6; c.querySelector('[data-k="geun"]').value = r.geun || ""; }
+    if (k === "geun") { r.geun = v; r.per100 = Math.round(v / 6); c.querySelector('[data-k="per100"]').value = r.per100 || ""; }
+    if (k === "price") r.price = v;
+  }
+  touch(e.target, r);
+});
+document.querySelectorAll(".stat").forEach(b => b.addEventListener("click", () => { FILTER = b.dataset.f; render(); window.scrollTo(0, 0); }));
+$("#q").addEventListener("input", render);
+$("#undo").addEventListener("click", () => { ROWS.forEach(r => { const [a,b,c,d,...e] = ORIG[r.id].split("|"); r.per100 = Number(a); r.geun = Number(b); r.price = Number(c); r.status = d; r.desc = e.join("|"); }); render(); toast("바꾸기 전으로 되돌렸어요"); });
+
+$("#save").addEventListener("click", async () => {
+  const bad = ROWS.find(r => !(r.gram ? r.geun > 0 : r.price > 0));
+  if (bad) return toast(`'${bad.name}' 가격이 비어 있어요. 가격을 넣어 주세요.`, true);
+  busy = true; bar();
+  const values = [["id","group","name","per100","geun","price","status","desc"]].concat(ROWS.map(r => [r.id, r.group, r.name, r.gram ? r.per100 : "", r.gram ? r.geun : "", r.gram ? "" : r.price, r.status, r.desc]));
+  try {
+    const res = await call({ pin: PIN, action: "catalog", payload: JSON.stringify({ values }) });
+    if (!res || !res.ok) throw new Error("denied");
+    const want = {}; ROWS.forEach(r => want[r.id] = key(r));
+    await new Promise(r => setTimeout(r, 1200));
+    const now = await loadSheet(); const miss = now.filter(r => want[r.id] !== key(r)).length;
+    ROWS = now; ORIG = {}; ROWS.forEach(r => ORIG[r.id] = key(r));
+    toast(miss ? "저장은 됐는데 일부가 아직 안 보여요. 잠시 후 새로고침해 주세요." : "저장했어요. 손님 화면에 반영됐어요 ✅", !!miss);
+  } catch (e) {
+    toast(e.message === "denied" ? "저장이 안 됐어요. 나갔다가 비밀번호를 다시 넣어 주세요." : "저장이 안 됐어요. 인터넷 연결을 확인하고 다시 눌러 주세요.", true);
+  } finally { busy = false; render(); }
+});
+
+/* 로그인 */
+function enter() { $("#v-login").classList.add("hidden"); $("#v-app").classList.remove("hidden"); refresh(); }
+$("#login-btn").addEventListener("click", async () => {
+  const p = $("#pin").value.trim(); if (!p) return;
+  $("#login-btn").disabled = true; $("#login-err").textContent = "";
+  try {
+    const res = await call({ pin: p, action: "ping" });
+    if (res && res.ok) { PIN = p; try { localStorage.setItem("cj_admin", p); } catch (e) {} enter(); }
+    else $("#login-err").textContent = "비밀번호가 맞지 않아요.";
+  } catch (e) { $("#login-err").textContent = "연결이 안 됐어요. 잠시 후 다시 눌러 주세요."; }
+  finally { $("#login-btn").disabled = false; }
+});
+$("#pin").addEventListener("keydown", (e) => { if (e.key === "Enter") $("#login-btn").click(); });
+$("#logout").addEventListener("click", () => { if (dirtyCount() && !confirm("저장 안 한 변경이 있어요. 그래도 나갈까요?")) return; try { localStorage.removeItem("cj_admin"); } catch (e) {} PIN = ""; $("#pin").value = ""; $("#v-app").classList.add("hidden"); $("#v-login").classList.remove("hidden"); });
+window.addEventListener("beforeunload", (e) => { if (dirtyCount()) { e.preventDefault(); e.returnValue = ""; } });
+try { const saved = localStorage.getItem("cj_admin"); if (saved) { PIN = saved; enter(); } } catch (e) {}
+</script>
+</body>
+</html>
