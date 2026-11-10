@@ -235,7 +235,7 @@
 /* ============ 설정 (여기만 수정) ============ */
 const CONFIG = {
   cap: 15,                                   // 회차당 최대 팩 수
-  pickup: { time: "오후 5:00 ~ 5:30", place: "A블럭 110동 지하 4층", sign: "" },  // 픽업 시간·장소
+  pickup: { smsTime: "오후 4:30 ~ 5:30", time: "오후 5:00 ~ 5:30", place: "A블럭 110동 지하 4층", sign: "" },  // 픽업 시간·장소
   pickupDays: [1, 5],                        // 픽업 요일 (0일 1월 2화 3수 4목 5금 6토)
   firstPickup: "",                           // 첫 회차 예외 없음 (월·금만)
   fee: 3000, freeOver: 150000,              // 배달비: 15만원 미만 주문만 3,000원
@@ -613,9 +613,11 @@ function packingText() {
 /* 손님 문자 (내 폰 문자 앱으로 열기) */
 function telOf(v) { let t = String(v||"").replace(/\D/g,""); if (t.length === 10 && t[0] === "1") t = "0" + t; return t; }
 function dayLabel(ds) { const [y,m,d] = ds.split("-").map(Number); const t = new Date(y, m-1, d); return `${m}월 ${d}일(${"일월화수목금토"[t.getDay()]})`; }
+// 주문자 동호수에서 동만 뽑아 "113동 무인택배함" (동을 못 찾으면 적힌 동호수 그대로)
+function lockerOf(unit) { const u = String(unit || "").trim(), m = u.match(/(\d{2,4})\s*동/) || u.match(/^(\d{3,4})\s*[-–\s]/); return (m ? m[1] + "동" : u) + " 무인택배함"; }
 function smsText(kind, o) {
   const P = CONFIG.pickup;
-  if (kind === "paid") return `[청정한우 사다드림] ${o.name}님, 입금 확인됐어요.\n픽업: ${dayLabel($("#a-batch").value)} ${P.time}\n장소: ${P.place}\n받으실 때 이름 + 휴대폰 뒷자리 알려주세요.`;
+  if (kind === "paid") return `[청정한우 사다드림] ${o.name}님, 입금 확인됐어요.\n\n픽업: ${dayLabel($("#a-batch").value)} ${P.smsTime || P.time}\n장소: ${lockerOf(o.unit)}\n\n비밀번호와 택배함 위치는 픽업 때 말씀드릴게요. 주문 감사합니다😍`;
   return `[청정한우 사다드림] ${o.name}님, 지금 ${P.place}에서 픽업 시작했어요. ${P.time.split("~").pop().trim()}까지 받아가세요!`;
 }
 function smsLink(kind, o) { return `sms:${telOf(o.phone)}?&body=${encodeURIComponent(smsText(kind, o))}`; }
