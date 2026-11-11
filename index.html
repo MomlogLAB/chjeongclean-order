@@ -137,7 +137,7 @@
   <header>
     <div class="brand">청정한우</div>
     <h1>사다드림 <span class="for">for 디방</span></h1>
-    <p>부천 상동시장 30년 · 월·금 픽업 (당일 오전 11시 마감)</p>
+    <p>부천 상동시장 30년 · 화·금 무인택배함 전달 (당일 오전 11시 마감)</p>
   </header>
   <nav>
     <button class="on" data-v="order">주문</button>
@@ -148,7 +148,7 @@
     <!-- 주문 -->
     <section id="v-order">
       <div class="banner" id="banner"><small id="b-label"></small><b id="b-count"></b><small id="b-left"></small></div>
-      <div class="box" style="font-size:14px;line-height:1.6"><b>매주 월·금 오후 5:00~5:30</b> <b>A블럭 110동 지하 4층</b>에서 받아가세요.<br>픽업일 <b>오전 11시까지 입금 확인된 주문</b>만 그날 픽업, 이후 주문은 다음 픽업일로 넘어가요. 배달비는 <b>15만원 미만 주문만 3,000원</b> (15만원 이상 무료).<br><b>고기는 150g(1인분) 단위</b>로 담겨요. 갈비류는 600g, 사골육수는 1병(1.5L) 단위예요.<br>스테이크, 구이용 원하시는 두께는 요청사항에 적어주세요.<br><b>개별 진공 포장</b>을 원하시면 요청사항에 적어주세요.</div>
+      <div class="box" style="font-size:14px;line-height:1.6"><b>매주 화·금 오후 4:30~5:30</b> 사이에 <b>주문하신 동의 무인택배함</b>에 넣어 드려요. 택배함에서 <b>세대 비밀번호</b>를 누르고 찾아가세요.<br>전달일 <b>오전 11시까지 입금 확인된 주문</b>만 그날 전달, 이후 주문은 다음 전달일로 넘어가요. 배달비는 <b>15만원 미만 주문만 3,000원</b> (15만원 이상 무료).<br><b>고기는 150g(1인분) 단위</b>로 담겨요. 갈비류는 600g, 사골육수는 1병(1.5L) 단위예요.<br>스테이크, 구이용 원하시는 두께는 요청사항에 적어주세요.<br><b>개별 진공 포장</b>을 원하시면 요청사항에 적어주세요.</div>
       <h2>메뉴</h2>
       <div id="items"></div>
       <div style="margin-top:24px">
@@ -174,7 +174,7 @@
         <div style="font-weight:700;font-size:14px" id="d-bankname"></div>
         <div class="acct"><b id="d-acct"></b><button id="d-copy">계좌 복사</button></div>
         <div style="font-size:14px" id="d-holder"></div>
-        <div class="note">입금자명은 <b id="d-name"></b>으로 부탁드려요. 픽업일 오전 11시까지 입금 확인된 주문만 그날 오후 5시 픽업돼요 (월·금). 시세 품목은 금액을 따로 안내드립니다.</div>
+        <div class="note">입금자명은 <b id="d-name"></b>으로 부탁드려요. 전달일 오전 11시까지 입금 확인된 주문만 그날 오후 4:30~5:30 사이 무인택배함에 넣어 드려요 (화·금). 시세 품목은 금액을 따로 안내드립니다.</div>
       </div>
       <button class="btn" id="d-paid">입금했어요 (사장님에게 알림)</button>
       <p class="note hidden" id="d-paid-ok" style="font-weight:700;color:var(--ink)">알림 보냈어요. 확인되면 상태가 '입금 확인'으로 바뀝니다.</p>
@@ -184,7 +184,7 @@
         <div class="pk-row"><span>시간</span><b id="pk-time"></b></div>
         <div class="pk-row"><span>장소</span><b id="pk-place"></b></div>
         <div class="pk-row"><span>배달비</span><b id="pk-fee"></b></div>
-        <div class="pk-row"><span>받을 때</span><b>이름 + 휴대폰 뒷자리 4자리</b></div>
+        <div class="pk-row"><span>찾는 법</span><b>무인택배함에서 세대 비밀번호 입력</b></div>
         <p>신선식품이라 연락 없이 안 오시면 다음 날까지만 보관 후 폐기하며 환불되지 않아요. 못 오시면 미리 오픈채팅으로 말씀해 주세요 (대리 수령·다음 회차 변경 가능).</p>
       </div>
       <p class="note" id="d-pickup"></p>
@@ -235,8 +235,8 @@
 /* ============ 설정 (여기만 수정) ============ */
 const CONFIG = {
   cap: 15,                                   // 회차당 최대 팩 수
-  pickup: { smsTime: "오후 4:30 ~ 5:30", time: "오후 5:00 ~ 5:30", place: "A블럭 110동 지하 4층", sign: "" },  // 픽업 시간·장소
-  pickupDays: [1, 5],                        // 픽업 요일 (0일 1월 2화 3수 4목 5금 6토)
+  pickup: { smsTime: "오후 4:30 ~ 5:30", time: "오후 4:30 ~ 5:30", place: "주문하신 동 무인택배함", sign: "" },  // 픽업 시간·장소
+  pickupDays: [2, 5],                        // 픽업 요일 (0일 1월 2화 3수 4목 5금 6토)
   firstPickup: "",                           // 첫 회차 예외 없음 (월·금만)
   fee: 3000, freeOver: 150000,              // 배달비: 15만원 미만 주문만 3,000원
   bankName: "신한은행", bankAccount: "110014500821", bankHolder: "윤장희(청정한우)",
@@ -403,7 +403,7 @@ function showPickup() {
   $("#pk-day").textContent = pickupDay(batch().cutoff);
   $("#pk-time").textContent = CONFIG.pickup.time;
   const f = LAST && LAST.items.find(i => i.id === "fee"); $("#pk-fee").textContent = f ? f.line.replace(/^배달비 /,"") : "";
-  $("#pk-place").textContent = CONFIG.pickup.sign ? `${CONFIG.pickup.place} · ${CONFIG.pickup.sign}` : CONFIG.pickup.place;
+  $("#pk-place").textContent = LAST && LAST.unit ? lockerOf(LAST.unit) : CONFIG.pickup.place;
   $("#d-pick").classList.remove("hidden");
 }
 function countdown(c) { const ms = c - kst(); if (ms <= 0) return "마감"; const h = Math.floor(ms/3600000), m = Math.floor(ms%3600000/60000); return h > 0 ? `${h}시간 ${m}분` : `${m}분`; }
@@ -418,7 +418,7 @@ function render() {
   $("#b-label").textContent = `${pickupDay(B.cutoff)} 픽업 · 오전 11:00 주문 마감까지`;
   $("#b-count").textContent = countdown(B.cutoff);
   const totalQty = Object.values(qty).reduce((a,b)=>a+b,0);
-  $("#b-left").textContent = "매주 월·금 오후 5:00~5:30 픽업";
+  $("#b-left").textContent = "매주 화·금 오후 4:30~5:30 · 무인택배함";
   let lastG = "";
   $("#items").innerHTML = PRODUCTS.map(p => (p.group !== lastG ? (lastG = p.group, `<div class="ghead">${p.group}${GROUP_NOTE[p.group] ? `<small>${GROUP_NOTE[p.group]}</small>` : ""}</div>`) : "") + `
     <div class="item${p.status === "품절" ? " soldout" : ""}">
@@ -618,7 +618,7 @@ function lockerOf(unit) { const u = String(unit || "").trim(), m = u.match(/(\d{
 function smsText(kind, o) {
   const P = CONFIG.pickup;
   if (kind === "paid") return `[청정한우 사다드림] ${o.name}님, 입금 확인됐어요.\n\n픽업: ${dayLabel($("#a-batch").value)} ${P.smsTime || P.time}\n장소: ${lockerOf(o.unit)}\n\n비밀번호와 택배함 위치는 픽업 때 말씀드릴게요. 주문 감사합니다😍`;
-  return `[청정한우 사다드림] ${o.name}님, 지금 ${P.place}에서 픽업 시작했어요. ${P.time.split("~").pop().trim()}까지 받아가세요!`;
+  return `[청정한우 사다드림] ${o.name}님, 지금 ${lockerOf(o.unit)}에 넣었어요.\n\n택배함에서 세대 비밀번호를 누르고 찾아가세요. 신선식품이라 최대한 빨리 꺼내 주세요!`;
 }
 function smsLink(kind, o) { return `sms:${telOf(o.phone)}?&body=${encodeURIComponent(smsText(kind, o))}`; }
 function renderAdmin() {
@@ -640,7 +640,7 @@ function renderAdmin() {
       ${o.status === "접수" ? `<p class="note" style="margin:8px 0 0">입금 확인 전이에요. 시트 상태(I열)를 '입금'으로 바꾸고 [불러오기]를 누르면 문자 버튼이 나와요.</p>` : `
       <div class="acts sms">
         <a class="smsbtn" href="${smsLink("paid", o)}">입금 확인 문자</a>
-        <a class="smsbtn ghost" href="${smsLink("start", o)}">픽업 시작 문자</a>
+        <a class="smsbtn ghost" href="${smsLink("start", o)}">택배함 넣음 문자</a>
       </div>`}
     </div>`).join("") : `<p class="note">이 회차 주문이 아직 없어요.</p>`;
 }
