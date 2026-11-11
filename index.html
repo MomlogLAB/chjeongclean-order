@@ -617,7 +617,7 @@ function dayLabel(ds) { const [y,m,d] = ds.split("-").map(Number); const t = new
 function lockerOf(unit) { const u = String(unit || "").trim(), m = u.match(/(\d{2,4})\s*동/) || u.match(/^(\d{3,4})\s*[-–\s]/); return (m ? m[1] + "동" : u) + " 무인택배함"; }
 function smsText(kind, o) {
   const P = CONFIG.pickup;
-  if (kind === "wait") return `[청정한우 사다드림] ${o.name}님, 주문 감사해요.\n아직 입금 확인이 안 돼서 연락드려요.\n\n금액: ${won(o.total)}\n계좌: ${CONFIG.bankName} ${CONFIG.bankAccount}\n예금주: ${CONFIG.bankHolder}\n입금자명: ${o.name}\n\n${dayLabel($("#a-batch").value)} 오전 11시까지 입금 확인된 주문만 그날 넣어 드려요. 이미 입금하셨다면 알려주세요 😊`;
+  if (kind === "wait") return `[청정한우 사다드림] ${o.name}님, 주문 감사합니다^^\n입금 내역이 아직 확인되지 않아 확인 부탁드리려고 연락드려요.\n\n금액: ${won(o.total)}\n계좌: ${CONFIG.bankName} ${CONFIG.bankAccount}\n예금주: ${CONFIG.bankHolder}\n입금자명: ${o.name}\n\n${dayLabel($("#a-batch").value)} 오전 11시까지 입금 확인된 주문만 그날 넣어 드릴 수 있어요.\n이미 입금하셨다면 번거로우시겠지만 입금자명과 함께 알려주세요. 바로 확인해 드릴게요 😊`;
   if (kind === "paid") return `[청정한우 사다드림] ${o.name}님, 입금 확인됐어요.\n\n픽업: ${dayLabel($("#a-batch").value)} ${P.smsTime || P.time}\n장소: ${lockerOf(o.unit)}\n\n비밀번호와 택배함 위치는 픽업 때 말씀드릴게요. 주문 감사합니다😍`;
   return `[청정한우 사다드림] ${o.name}님, 지금 ${lockerOf(o.unit)}에 넣었어요.\n\n택배함에서 세대 비밀번호를 누르고 찾아가세요. 신선식품이라 최대한 빨리 꺼내 주세요!`;
 }
