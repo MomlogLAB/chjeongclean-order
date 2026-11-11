@@ -586,8 +586,9 @@ function expandRows(rows) {
     const parts = pack.split(",").map(t => t.split(":")).filter(t => t[0]);
     parts.forEach(([id, g], i) => {
       const p = PRODUCTS.find(q => q.id === id);
-      if (id === "b09") { const n = Number(g) || 0; g = n / (n % 240 === 0 ? 120 : n % 280 === 0 ? 140 : 180) * 120; }   // 팩 국거리는 팩 수로 맞춤 (예전 140g·180g 주문 포함)
-      out.push({ ...x, item: p ? p.name : id, qty: Number(g) || 0, amount: i === 0 ? Number(x.amount || 0) : 0 });
+      let nm = p ? p.name : id;
+      if (id === "b09") { const n = Number(g) || 0, per = n % 240 === 0 ? 120 : n % 280 === 0 ? 140 : 180; g = n / per * 120; if (per !== 120) nm = `팩 국거리 (한 팩 ${per}g)`; }   // 팩 수로 맞춤. 예전 140g 주문은 이름에 140g 유지
+      out.push({ ...x, item: nm, qty: Number(g) || 0, amount: i === 0 ? Number(x.amount || 0) : 0 });
     });
     if (!parts.length) out.push(x);
   });
