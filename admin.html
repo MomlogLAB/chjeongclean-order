@@ -67,6 +67,26 @@
   .fld.desc input { text-align:left; font-weight:600; font-size:15px; }
   .cust { font-size:12px; color:var(--grey); margin-top:6px; }
 
+  .ncard { background:#fff; margin:12px 12px 0; border-radius:16px; padding:14px; box-shadow:0 1px 3px rgba(0,0,0,.05); }
+  .ncard h3 { margin:0 0 4px; font-size:16px; font-weight:900; }
+  .ncard p { margin:0 0 8px; font-size:12px; color:var(--grey); line-height:1.5; }
+  .ncard textarea { width:100%; min-height:150px; border:1px solid var(--line); border-radius:10px; padding:10px; font-family:inherit; font-size:14px; line-height:1.55; outline:none; resize:vertical; }
+  .ncard textarea:focus { border-color:var(--g); }
+  .ncard .row2 { display:flex; gap:8px; margin-top:8px; }
+  .sbtn { border:0; border-radius:10px; padding:11px 14px; font-size:14px; font-weight:900; background:var(--g); color:#fff; }
+  .sbtn.ghost { background:var(--bg); color:var(--grey); }
+  .sbtn:disabled { opacity:.5; }
+  .ncard summary { font-size:16px; font-weight:900; cursor:pointer; list-style:none; display:flex; justify-content:space-between; align-items:center; }
+  .ncard summary::after { content:"열기 ▾"; font-size:12px; font-weight:800; color:var(--g); }
+  .ncard details[open] summary::after { content:"닫기 ▴"; }
+  .ncard details[open] summary { margin-bottom:8px; }
+  .photo { display:flex; align-items:center; gap:12px; margin-top:12px; }
+  .photo .ph { width:66px; height:88px; border-radius:8px; background:var(--bg); flex-shrink:0; overflow:hidden; display:flex; align-items:center; justify-content:center; font-size:11px; color:var(--grey); font-weight:700; text-align:center; }
+  .photo .ph img { width:100%; height:100%; object-fit:cover; display:block; }
+  .photo .pbtns { display:flex; flex-direction:column; gap:6px; flex:1; }
+  .photo label.sbtn { text-align:center; cursor:pointer; }
+  .photo input[type=file] { display:none; }
+  .photo small { font-size:11px; color:var(--grey); }
   .savebar { position:fixed; left:50%; transform:translateX(-50%); bottom:0; width:100%; max-width:520px; padding:12px 14px calc(12px + env(safe-area-inset-bottom)); background:#fff; border-top:1px solid var(--line); box-shadow:0 -6px 20px rgba(0,0,0,.08); display:flex; gap:10px; z-index:6; }
   .savebar button { border:0; border-radius:14px; font-size:16px; font-weight:900; padding:15px; }
   .savebar .undo { background:var(--bg); color:var(--grey); flex:0 0 96px; }
@@ -105,6 +125,12 @@
         <button class="stat" data-f="품절"><b id="n-so">0</b><span>품절</span></button>
       </div>
     </div>
+    <div class="ncard"><details id="n-box">
+      <summary>맨 위 안내문 (손님 주문 화면)</summary>
+      <p>주문 화면 맨 위 상자에 보이는 글이에요. 줄을 바꾸면 그대로 줄이 바뀌고, <b>**이렇게**</b> 별표 두 개로 감싼 글자는 굵게 보여요.</p>
+      <textarea id="n-text" placeholder="안내문을 불러오는 중…"></textarea>
+      <div class="row2"><button class="sbtn" id="n-save">안내문 저장</button><button class="sbtn ghost" id="n-undo">되돌리기</button></div>
+    </details></div>
     <div class="tools"><input id="q" placeholder="🔍 고기 이름으로 찾기 (예: 살치)"></div>
     <div class="hint">상태·가격·설명을 바꾸고 아래 <b>저장하기</b>를 누르면 손님 화면에 반영돼요.</div>
     <main id="list"><div class="empty">메뉴판을 불러오는 중…</div></main>
@@ -122,6 +148,7 @@ const CFG = {
   hook: "https://hook.us2.make.com/1vqiu1h0djvu4x23fa3kgospq7h9cjwj",            // Make 6번 시나리오 (관리자)
   step: { b09:240, b25:1500, b18:1500, b21:600, b22:600, p15:600, p16:600, u01:600, u02:600 },   // 담는 단위(g), 기본 150
 };
+const STATIC_PHOTOS = ["b29","b27","b21","b08","b01","b04","b12","b13","b03","b06","b11","b19","b09","p01","p02","p03","p12","p13"];   // 사이트에 기본으로 들어 있는 사진
 const $ = (s) => document.querySelector(s);
 const won = (n) => Number(n).toLocaleString("ko-KR") + "원";
 const esc = (t) => String(t).replace(/[&<>"]/g, m => ({ "&":"&amp;", "<":"&lt;", ">":"&gt;", '"':"&quot;" }[m]));
@@ -136,23 +163,78 @@ async function call(payload) {
 }
 
 /* 메뉴판 시트 읽기 */
-function loadSheet() {
+function gviz(params) {
   return new Promise((resolve, reject) => {
-    const fn = "__cat" + Date.now(), sc = document.createElement("script");
-    const fin = (v, e) => { clearTimeout(tm); delete window[fn]; sc.remove(); e ? reject(e) : resolve(v); };
-    const tm = setTimeout(() => fin(null, new Error("timeout")), 10000);
-    window[fn] = (r) => {
-      if (!r || r.status !== "ok" || !r.table) return fin(null, new Error("bad"));
-      const rows = r.table.rows.map(row => (row.c || []).map(x => (x && x.v != null) ? x.v : ""))
-        .filter(c => /^[a-z]\d+$/.test(String(c[0]).trim()))
-        .map(c => { const st = String(c[6] || ""); return { id:String(c[0]).trim(), group:String(c[1]||""), name:String(c[2]||""), per100:Number(c[3])||0, geun:Number(c[4])||0, price:Number(c[5])||0, gram:(Number(c[4])||0) > 0,
-          status: st.includes("품절") ? "품절" : st.includes("예약") ? "예약" : "판매중", desc:String(c[7]||"").trim() }; });
-      fin(rows);
-    };
+    const fn = "__gv" + Date.now() + Math.floor(Math.random() * 1e6), sc = document.createElement("script");
+    const fin = (r, e) => { clearTimeout(tm); delete window[fn]; sc.remove(); e ? reject(e) : resolve(r); };
+    const tm = setTimeout(() => fin(null, new Error("timeout")), 12000);
+    window[fn] = (r) => (!r || r.status !== "ok" || !r.table) ? fin(null, new Error("bad")) : fin(r.table.rows.map(row => (row.c || []).map(x => (x && x.v != null) ? x.v : "")));
     sc.onerror = () => fin(null, new Error("load"));
-    sc.src = `https://docs.google.com/spreadsheets/d/${CFG.sheet}/gviz/tq?tqx=out:json;responseHandler:${fn};reqId:${Date.now() % 100000}&headers=1`;
+    sc.src = `https://docs.google.com/spreadsheets/d/${CFG.sheet}/gviz/tq?tqx=out:json;responseHandler:${fn};reqId:${Date.now() % 100000}&headers=1${params || ""}`;
     document.head.appendChild(sc);
   });
+}
+async function loadSheet() {
+  const rows = await gviz("");
+  let rowNo = 1;
+  return rows.map(c => { rowNo++; return { c, rowNo }; })
+    .filter(x => /^[a-z]\d+$/.test(String(x.c[0]).trim()))
+    .map(({ c, rowNo }) => { const st = String(c[6] || ""); return { id:String(c[0]).trim(), group:String(c[1]||""), name:String(c[2]||""), per100:Number(c[3])||0, geun:Number(c[4])||0, price:Number(c[5])||0, gram:(Number(c[4])||0) > 0,
+      status: st.includes("품절") ? "품절" : st.includes("예약") ? "예약" : "판매중", desc:String(c[7]||"").trim(), photoVer:String(c[8]||"").trim(), rowNo }; });
+}
+/* 올린 사진 불러오기 (Photos 탭) */
+const PH = {};
+async function photoOf(r) {
+  if (!r.photoVer) return STATIC_PHOTOS.includes(r.id) ? `img/${r.id}.jpg` : "";
+  if (PH[r.id] && PH[r.id].v === r.photoVer) return PH[r.id].d;
+  const rows = await gviz("&sheet=Photos&tq=" + encodeURIComponent(`select B,C,D,E,F where A='${r.id}'`));
+  const x = rows.find(y => String(y[0]).trim() === r.photoVer); if (!x) return "";
+  PH[r.id] = { v: r.photoVer, d: "data:image/jpeg;base64," + x.slice(1).join("") };
+  return PH[r.id].d;
+}
+async function fillPhotos() {
+  for (const r of ROWS) {
+    const box = document.querySelector(`.card[data-id="${r.id}"] .ph`); if (!box || box.dataset.v === (r.photoVer || "static")) continue;
+    let src = ""; try { src = await photoOf(r); } catch (e) {}
+    const b2 = document.querySelector(`.card[data-id="${r.id}"] .ph`); if (!b2) continue;
+    b2.dataset.v = r.photoVer || "static"; b2.innerHTML = src ? `<img src="${src}" alt="">` : "사진<br>없음";
+  }
+}
+/* 사진 줄이기: 긴 쪽 720px, 글자 수 176,000자 이하(시트 4칸)로 맞춤 */
+function shrink(file) {
+  return new Promise((resolve, reject) => {
+    const url = URL.createObjectURL(file), im = new Image();
+    im.onload = () => {
+      let side = 720, q = 0.8, out = "";
+      for (let i = 0; i < 12; i++) {
+        const k = Math.min(1, side / Math.max(im.naturalWidth, im.naturalHeight)), cv = document.createElement("canvas");
+        cv.width = Math.round(im.naturalWidth * k); cv.height = Math.round(im.naturalHeight * k);
+        cv.getContext("2d").drawImage(im, 0, 0, cv.width, cv.height);
+        out = cv.toDataURL("image/jpeg", q).split(",")[1] || "";
+        if (out.length <= 176000) break;
+        if (q > 0.5) q -= 0.1; else side = Math.round(side * 0.85);
+      }
+      URL.revokeObjectURL(url);
+      out && out.length <= 176000 ? resolve(out) : reject(new Error("big"));
+    };
+    im.onerror = () => { URL.revokeObjectURL(url); reject(new Error("img")); };
+    im.src = url;
+  });
+}
+async function savePhoto(r, b64) {   // b64가 비어 있으면 올린 사진 지우기
+  const ver = b64 ? Date.now().toString(36) : "", ch = [0,1,2,3].map(i => b64.slice(i * 44000, (i + 1) * 44000));
+  const payload = { valueInputOption: "RAW", data: [
+    { range: `Photos!A${r.rowNo}:F${r.rowNo}`, values: [[b64 ? r.id : "", ver, ...ch]] },
+    { range: `I${r.rowNo}`, values: [[ver]] } ] };
+  const res = await call({ pin: PIN, action: "batch", payload: JSON.stringify(payload) });
+  if (!res || !res.ok) throw new Error("denied");
+  r.photoVer = ver; if (b64) PH[r.id] = { v: ver, d: "data:image/jpeg;base64," + b64 }; else delete PH[r.id];
+}
+/* 맨 위 안내문 */
+let NOTICE0 = "";
+async function loadNotice() {
+  try { const rows = await gviz("&sheet=Settings"); const r = rows.find(x => String(x[0]).trim() === "notice"); NOTICE0 = r ? String(r[1] || "") : ""; $("#n-text").value = NOTICE0; $("#n-text").placeholder = "예: 매주 화·금 오후 4:30~5:30 사이에 무인택배함에 넣어 드려요."; }
+  catch (e) { $("#n-text").placeholder = "안내문을 불러오지 못했어요. 새로고침해 주세요."; }
 }
 const key = (r) => [r.per100, r.geun, r.price, r.status, r.desc].join("|");
 const isDirty = (r) => ORIG[r.id] !== key(r);
@@ -179,6 +261,10 @@ function card(r) {
          <div class="fld"><label>1근(600g) 가격</label><div class="in"><input inputmode="numeric" data-k="geun" value="${r.geun || ""}"><span>원</span></div></div>`
       : `<div class="fld"><label>가격 (1개 · 1세트)</label><div class="in"><input inputmode="numeric" data-k="price" value="${r.price || ""}"><span>원</span></div></div>`}</div>
     ${isG ? `<div class="cust">${custPrice(r)}</div>` : ""}
+    <div class="photo"><div class="ph">…</div><div class="pbtns">
+      <label class="sbtn">${r.photoVer || STATIC_PHOTOS.includes(r.id) ? "사진 바꾸기" : "사진 추가"}<input type="file" accept="image/*" data-photo="${r.id}"></label>
+      ${r.photoVer ? `<button class="sbtn ghost" data-delphoto="${r.id}">${STATIC_PHOTOS.includes(r.id) ? "원래 사진으로" : "사진 지우기"}</button>` : ""}
+      <small>사진을 고르면 바로 손님 화면에 올라가요.</small></div></div>
     <div class="prices"><div class="fld desc"><label>고기 설명 (손님 화면 상품명 아래에 보여요)</label><div class="in"><input data-k="desc" maxlength="60" placeholder="예: 냉동 / 오늘 들어온 1++ / 마블링 좋아요" value="${esc(r.desc)}"></div></div></div>
   </div>`;
 }
@@ -193,7 +279,7 @@ function render() {
   const list = ROWS.filter(r => (FILTER === "전체" || r.status === FILTER) && (!q || r.name.includes(q)));
   let g = "";
   $("#list").innerHTML = list.length ? list.map(r => (r.group !== g ? (g = r.group, `<div class="ghead">${esc(r.group)}</div>`) : "") + card(r)).join("") : '<div class="empty">해당하는 메뉴가 없어요.</div>';
-  bar();
+  bar(); fillPhotos();
 }
 function bar() {
   const n = dirtyCount();
@@ -227,6 +313,33 @@ $("#list").addEventListener("input", (e) => {
 });
 document.querySelectorAll(".stat").forEach(b => b.addEventListener("click", () => { FILTER = b.dataset.f; render(); window.scrollTo(0, 0); }));
 $("#q").addEventListener("input", render);
+$("#list").addEventListener("change", async (e) => {
+  const id = e.target.dataset.photo; if (!id || !e.target.files || !e.target.files[0]) return;
+  const r = ROWS.find(x => x.id === id), lab = e.target.closest("label"), f = e.target.files[0];
+  lab.firstChild.textContent = "올리는 중…";
+  try { const b64 = await shrink(f); await savePhoto(r, b64); toast(`'${r.name}' 사진을 올렸어요 ✅`); }
+  catch (err) { toast(err.message === "denied" ? "사진이 안 올라갔어요. 나갔다가 비밀번호를 다시 넣어 주세요." : err.message === "img" ? "이 사진은 열 수 없어요. 다른 사진으로 해 주세요." : "사진이 안 올라갔어요. 인터넷 연결을 확인하고 다시 해 주세요.", true); }
+  render();
+});
+$("#list").addEventListener("click", async (e) => {
+  const b = e.target.closest("[data-delphoto]"); if (!b) return;
+  const r = ROWS.find(x => x.id === b.dataset.delphoto); b.disabled = true; b.textContent = "지우는 중…";
+  try { await savePhoto(r, ""); toast(`'${r.name}' 올린 사진을 지웠어요`); }
+  catch (err) { toast("지우지 못했어요. 다시 눌러 주세요.", true); }
+  render();
+});
+$("#n-undo").addEventListener("click", () => { $("#n-text").value = NOTICE0; });
+$("#n-save").addEventListener("click", async () => {
+  const t = $("#n-text").value.trim(); if (!t) return toast("안내문이 비어 있어요. 내용을 적어 주세요.", true);
+  if (t.length > 3000) return toast("안내문이 너무 길어요. 3,000자 안으로 줄여 주세요.", true);
+  const b = $("#n-save"); b.disabled = true; b.textContent = "저장 중…";
+  try {
+    const res = await call({ pin: PIN, action: "batch", payload: JSON.stringify({ valueInputOption: "RAW", data: [{ range: "Settings!A2:B2", values: [["notice", t]] }] }) });
+    if (!res || !res.ok) throw new Error("denied");
+    NOTICE0 = t; toast("안내문을 저장했어요. 손님 화면에 반영됐어요 ✅");
+  } catch (err) { toast(err.message === "denied" ? "저장이 안 됐어요. 나갔다가 비밀번호를 다시 넣어 주세요." : "저장이 안 됐어요. 인터넷 연결을 확인하고 다시 눌러 주세요.", true); }
+  finally { b.disabled = false; b.textContent = "안내문 저장"; }
+});
 $("#undo").addEventListener("click", () => { ROWS.forEach(r => { const [a,b,c,d,...e] = ORIG[r.id].split("|"); r.per100 = Number(a); r.geun = Number(b); r.price = Number(c); r.status = d; r.desc = e.join("|"); }); render(); toast("바꾸기 전으로 되돌렸어요"); });
 
 $("#save").addEventListener("click", async () => {
@@ -248,7 +361,7 @@ $("#save").addEventListener("click", async () => {
 });
 
 /* 로그인 */
-function enter() { $("#v-login").classList.add("hidden"); $("#v-app").classList.remove("hidden"); refresh(); }
+function enter() { $("#v-login").classList.add("hidden"); $("#v-app").classList.remove("hidden"); refresh(); loadNotice(); }
 $("#login-btn").addEventListener("click", async () => {
   const p = $("#pin").value.trim(); if (!p) return;
   $("#login-btn").disabled = true; $("#login-err").textContent = "";

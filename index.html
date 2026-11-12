@@ -148,7 +148,7 @@
     <!-- 주문 -->
     <section id="v-order">
       <div class="banner" id="banner"><small id="b-label"></small><b id="b-count"></b><small id="b-left"></small></div>
-      <div class="box" style="font-size:14px;line-height:1.6"><b>매주 화·금 오후 4:30~5:30</b> 사이에 <b>주문하신 동의 무인택배함</b>에 넣어 드려요. 택배함에서 <b>세대 비밀번호</b>를 누르고 찾아가세요.<br>전달일 <b>오전 11시까지 입금 확인된 주문</b>만 그날 전달, 이후 주문은 다음 전달일로 넘어가요. 배달비는 <b>15만원 미만 주문만 3,000원</b> (15만원 이상 무료).<br><b>고기는 150g(1인분) 단위</b>로 담겨요. 갈비류는 600g, 사골육수는 1병(1.5L) 단위예요.<br>스테이크, 구이용 원하시는 두께는 요청사항에 적어주세요.<br><b>개별 진공 포장</b>을 원하시면 요청사항에 적어주세요.</div>
+      <div class="box" id="notice" style="font-size:14px;line-height:1.6"><b>매주 화·금 오후 4:30~5:30</b> 사이에 <b>주문하신 동의 무인택배함</b>에 넣어 드려요. 택배함에서 <b>세대 비밀번호</b>를 누르고 찾아가세요.<br>전달일 <b>오전 11시까지 입금 확인된 주문</b>만 그날 전달, 이후 주문은 다음 전달일로 넘어가요. 배달비는 <b>15만원 미만 주문만 3,000원</b> (15만원 이상 무료).<br><b>고기는 150g(1인분) 단위</b>로 담겨요. 갈비류는 600g, 사골육수는 1병(1.5L) 단위예요.<br>스테이크, 구이용 원하시는 두께는 요청사항에 적어주세요.<br><b>개별 진공 포장</b>을 원하시면 요청사항에 적어주세요.</div>
       <h2>메뉴</h2>
       <div id="items"></div>
       <div style="margin-top:24px">
@@ -337,31 +337,53 @@ const fmtAmt = (name, v) => { if (name === "배달비") return ""; if (/^사골�
 
 /* 메뉴판 시트 읽기 (가격·설명·상태). 실패하면 위에 적힌 기본값 그대로 사용 */
 let CATALOG_AT = 0;
-function loadCatalog(done) {
-  if (!CONFIG.catalogSheet) return done && done(false);
-  const fn = "__cat" + Date.now(), sc = document.createElement("script");
-  const fin = (ok) => { clearTimeout(tm); delete window[fn]; sc.remove(); done && done(ok); };
-  const tm = setTimeout(() => fin(false), 8000);
-  window[fn] = (r) => { let ok = false; try { ok = applyCatalog(r); } catch (e) {} fin(ok); };
-  sc.onerror = () => fin(false);
-  sc.src = `https://docs.google.com/spreadsheets/d/${CONFIG.catalogSheet}/gviz/tq?tqx=out:json;responseHandler:${fn};reqId:${Date.now() % 100000}&headers=1`;
+function gviz(params, cb) {   // 메뉴판 시트를 스크립트 태그로 읽기 (실패하면 cb(null))
+  if (!CONFIG.catalogSheet) return cb(null);
+  const fn = "__gv" + Date.now() + Math.floor(Math.random() * 1e6), sc = document.createElement("script");
+  const fin = (r) => { clearTimeout(tm); delete window[fn]; sc.remove(); cb(r && r.status === "ok" && r.table ? r.table.rows.map(row => (row.c || []).map(x => (x && x.v != null) ? x.v : "")) : null); };
+  const tm = setTimeout(() => fin(null), 10000);
+  window[fn] = fin; sc.onerror = () => fin(null);
+  sc.src = `https://docs.google.com/spreadsheets/d/${CONFIG.catalogSheet}/gviz/tq?tqx=out:json;responseHandler:${fn};reqId:${Date.now() % 100000}&headers=1${params || ""}`;
   document.head.appendChild(sc);
 }
-function applyCatalog(r) {
-  if (!r || r.status !== "ok" || !r.table) return false;
+function loadCatalog(done) { gviz("", rows => { let ok = false; try { ok = !!rows && applyCatalog(rows); } catch (e) {} done && done(ok); }); }
+function applyCatalog(rows) {
   let n = 0;
-  r.table.rows.forEach(row => {
-    const c = (row.c || []).map(x => (x && x.v != null) ? x.v : "");
+  rows.forEach(c => {
     const p = PRODUCTS.find(x => x.id === String(c[0]).trim()); if (!p) return;
     const per100 = Number(c[3]), geun = Number(c[4]), price = Number(c[5]);
     if (p.geun && geun > 0) { p.geun = Math.round(geun); p.per100 = per100 > 0 ? Math.round(per100) : Math.round(geun / 6); p.price = Math.round(p.geun * unitOf(p).step / 600); }
     else if (!p.geun && price > 0) p.price = Math.round(price);
     const st = String(c[6] || "").trim(); p.status = st.includes("품절") ? "품절" : st.includes("예약") ? "예약" : "판매중";
     p.note = String(c[7] || "").trim();
+    p.photoVer = String(c[8] || "").trim();   // 사장님 페이지에서 올린 사진이 있으면 버전 값이 들어 있음
     n++;
   });
   if (n) CATALOG_AT = Date.now();
   return n > 0;
+}
+/* 사장님 페이지에서 올린 사진 (메뉴판 시트 Photos 탭에 나눠 저장) */
+const PH = {};   // id -> { v, d(data URL) }
+const BLANK = "data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==";
+const hasPhoto = (p) => !!p.photoVer || PHOTOS.includes(p.id);
+const photoSrc = (p) => p.photoVer ? (PH[p.id] && PH[p.id].v === p.photoVer ? PH[p.id].d : (PHOTOS.includes(p.id) ? `img/${p.id}.jpg` : BLANK)) : `img/${p.id}.jpg`;
+let phBusy = false;
+function loadPhotos() {
+  if (phBusy) return;
+  const p = PRODUCTS.find(x => x.photoVer && !(PH[x.id] && PH[x.id].v === x.photoVer) && x.photoTry !== x.photoVer); if (!p) return;
+  try { const c = JSON.parse(localStorage.getItem("cjph:" + p.id) || "null"); if (c && c.v === p.photoVer) { PH[p.id] = c; setPhoto(p); return loadPhotos(); } } catch (e) {}
+  phBusy = true; p.photoTry = p.photoVer;
+  gviz("&sheet=Photos&tq=" + encodeURIComponent(`select B,C,D,E,F where A='${p.id}'`), rows => {
+    phBusy = false;
+    const r = rows && rows.find(x => String(x[0]).trim() === p.photoVer);
+    if (r) { PH[p.id] = { v: p.photoVer, d: "data:image/jpeg;base64," + r.slice(1).join("") }; try { localStorage.setItem("cjph:" + p.id, JSON.stringify(PH[p.id])); } catch (e) {} setPhoto(p); }
+    loadPhotos();
+  });
+}
+function setPhoto(p) { document.querySelectorAll(`img[data-pid="${p.id}"]`).forEach(im => im.src = photoSrc(p)); }
+function applyNotice(t) {   // 맨 위 안내문: 줄바꿈 유지, **글자** 는 굵게
+  t = String(t || "").trim(); if (!t) return;
+  $("#notice").innerHTML = esc(t).replace(/\*\*(.+?)\*\*/g, "<b>$1</b>").replace(/\r?\n/g, "<br>");
 }
 const acctHtml = () => `<div style="font-weight:700;font-size:14px;margin-top:6px">${CONFIG.bankName}</div><div class="acct"><b>${CONFIG.bankAccount}</b><button type="button" class="cp-acct">계좌 복사</button></div><div style="font-size:14px">예금주 ${CONFIG.bankHolder}</div>`;
 const esc = (t) => String(t).replace(/[&<>"]/g, m => ({ "&":"&amp;", "<":"&lt;", ">":"&gt;", '"':"&quot;" }[m]));
@@ -422,7 +444,7 @@ function render() {
   let lastG = "";
   $("#items").innerHTML = PRODUCTS.map(p => (p.group !== lastG ? (lastG = p.group, `<div class="ghead">${p.group}${GROUP_NOTE[p.group] ? `<small>${GROUP_NOTE[p.group]}</small>` : ""}</div>`) : "") + `
     <div class="item${p.status === "품절" ? " soldout" : ""}">
-      ${PHOTOS.includes(p.id) ? `<div class="tcol"><button class="thumb" data-zoom="${p.id}" aria-label="${p.name} 사진 크게 보기"><img src="img/${p.id}.jpg" alt="${p.name}" loading="lazy"></button>${CAP_IDS.includes(p.id) ? `<small class="tcap">${capOf(p.id)}</small>` : ""}</div>` : ""}
+      ${hasPhoto(p) ? `<div class="tcol"><button class="thumb" data-zoom="${p.id}" aria-label="${p.name} 사진 크게 보기"><img src="${photoSrc(p)}" data-pid="${p.id}" alt="${p.name}" loading="lazy"></button>${CAP_IDS.includes(p.id) ? `<small class="tcap">${capOf(p.id)}</small>` : ""}</div>` : ""}
       <div class="info">
         <div class="name">${p.name}${p.status === "예약" ? '<span class="bdg rs">예약</span>' : p.status === "품절" ? '<span class="bdg so">품절</span>' : ""}</div>${p.note ? `<div class="inote">${esc(p.note)}</div>` : ""}${p.status === "예약" ? '<div class="rnote">예약 상품 · 입고되면 안내드려요</div>' : ""}
         <div class="price">${p.geun ? `<span class="p100">100g ${won(p.per100)}${p.flat ? ` + ${won(p.flat)}` : ""}</span><small class="geun">${p.flat ? `양에 상관없이 ${won(p.flat)} 추가` : `1근 ${won(p.geun)}`}</small>` : p.price ? won(p.price) : '<span class="sise">시세 · 주문 후 금액 안내</span>'}</div>
@@ -450,7 +472,7 @@ document.addEventListener("click", async (e) => {
   if (cp) { try { await navigator.clipboard.writeText(CONFIG.bankAccount); cp.textContent = "복사됨"; setTimeout(() => cp.textContent = "계좌 복사", 1500); } catch { prompt("계좌번호를 복사하세요", CONFIG.bankAccount); } return; }
   const z = e.target.closest("[data-zoom]");
   if (z) { const p = PRODUCTS.find(x => x.id === z.dataset.zoom); const d = document.createElement("div"); d.className = "zoom";
-    d.innerHTML = `<img src="img/${p.id}.jpg" alt="${p.name}"><p>${p.name}${CAP_IDS.includes(p.id) ? ` · ${capOf(p.id).replace("<br>"," · ")}` : ""}<br><small style="font-weight:400">눌러서 닫기</small></p>`; d.addEventListener("click", () => d.remove()); document.body.appendChild(d); return; }
+    d.innerHTML = `<img src="${photoSrc(p)}" data-pid="${p.id}" alt="${p.name}"><p>${p.name}${CAP_IDS.includes(p.id) ? ` · ${capOf(p.id).replace("<br>"," · ")}` : ""}<br><small style="font-weight:400">눌러서 닫기</small></p>`; d.addEventListener("click", () => d.remove()); document.body.appendChild(d); return; }
   const b = e.target.closest("[data-id]"); if (!b) return;
   const id = b.dataset.id, d = Number(b.dataset.d);
   const pp = PRODUCTS.find(x => x.id === id); if (pp.status === "품절") return;
@@ -461,7 +483,8 @@ document.addEventListener("click", async (e) => {
 ["#f-name","#f-phone","#f-unit"].forEach(s => $(s).addEventListener("input", render));
 setInterval(render, 30000);
 /* 메뉴판 반영: 처음 열 때 + 화면으로 돌아올 때(1분 이상 지났으면) */
-const syncCatalog = () => loadCatalog(ok => { if (!ok) return; PRODUCTS.forEach(p => { if (p.status === "품절") delete qty[p.id]; }); render(); });
+const syncCatalog = () => { loadCatalog(ok => { if (!ok) return; PRODUCTS.forEach(p => { if (p.status === "품절") delete qty[p.id]; }); render(); loadPhotos(); });
+  gviz("&sheet=Settings", rows => { const r = rows && rows.find(x => String(x[0]).trim() === "notice"); if (r) applyNotice(r[1]); }); };
 document.querySelectorAll(".acctbox").forEach(el => el.innerHTML = acctHtml());
 syncCatalog();
 document.addEventListener("visibilitychange", () => { if (!document.hidden && Date.now() - CATALOG_AT > 60000) syncCatalog(); });
