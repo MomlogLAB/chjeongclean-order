@@ -73,6 +73,11 @@
   .ncard textarea { width:100%; min-height:150px; border:1px solid var(--line); border-radius:10px; padding:10px; font-family:inherit; font-size:14px; line-height:1.55; outline:none; resize:vertical; }
   .ncard textarea:focus { border-color:var(--g); }
   .ncard .row2 { display:flex; gap:8px; margin-top:8px; }
+  .srow { display:flex; justify-content:space-between; align-items:center; gap:10px; padding:8px 0; font-size:14px; font-weight:700; border-top:1px solid var(--line); }
+  .srow.col { flex-direction:column; align-items:stretch; }
+  .srow input:not([type=checkbox]) { border:1px solid var(--line); border-radius:10px; padding:9px 10px; font-size:15px; font-family:inherit; width:130px; text-align:right; outline:none; }
+  .srow.col input { width:100%; text-align:left; }
+  .srow input[type=checkbox] { width:24px; height:24px; accent-color:var(--g); }
   .sbtn { border:0; border-radius:10px; padding:11px 14px; font-size:14px; font-weight:900; background:var(--g); color:#fff; }
   .sbtn.ghost { background:var(--bg); color:var(--grey); }
   .sbtn:disabled { opacity:.5; }
@@ -130,6 +135,15 @@
       <p>주문 화면 맨 위 상자에 보이는 글이에요. 줄을 바꾸면 그대로 줄이 바뀌고, <b>**이렇게**</b> 별표 두 개로 감싼 글자는 굵게 보여요.</p>
       <textarea id="n-text" placeholder="안내문을 불러오는 중…"></textarea>
       <div class="row2"><button class="sbtn" id="n-save">안내문 저장</button><button class="sbtn ghost" id="n-undo">되돌리기</button></div>
+    </details></div>
+    <div class="ncard"><details id="s-box">
+      <summary>택배 배송 설정</summary>
+      <p>켜면 손님 주문 화면에 <b>받는 방법: 우리 단지 / 택배 배송</b> 선택이 생겨요. 꺼 두면 지금처럼 단지 주문만 받아요.</p>
+      <label class="srow"><span>택배 주문 받기</span><input type="checkbox" id="s-on"></label>
+      <label class="srow"><span>택배비 (원)</span><input id="s-fee" inputmode="numeric" placeholder="예: 4000"></label>
+      <label class="srow"><span>무료배송 기준 (원, 없으면 비움)</span><input id="s-free" inputmode="numeric" placeholder="예: 100000"></label>
+      <label class="srow col"><span>택배 안내 한 줄 (선택)</span><input id="s-note" placeholder="예: 제주·도서산간은 보낼 수 없어요."></label>
+      <div class="row2"><button class="sbtn" id="s-save">택배 설정 저장</button></div>
     </details></div>
     <div class="tools"><input id="q" placeholder="🔍 고기 이름으로 찾기 (예: 살치)"></div>
     <div class="hint">상태·가격·설명을 바꾸고 아래 <b>저장하기</b>를 누르면 손님 화면에 반영돼요.</div>
@@ -233,7 +247,10 @@ async function savePhoto(r, b64) {   // b64가 비어 있으면 올린 사진 �
 /* 맨 위 안내문 */
 let NOTICE0 = "";
 async function loadNotice() {
-  try { const rows = await gviz("&sheet=Settings"); const r = rows.find(x => String(x[0]).trim() === "notice"); NOTICE0 = r ? String(r[1] || "") : ""; $("#n-text").value = NOTICE0; $("#n-text").placeholder = "예: 매주 화·금 오후 4:30~5:30 사이에 무인택배함에 넣어 드려요."; }
+  try { const rows = await gviz("&sheet=Settings"); const r = rows.find(x => String(x[0]).trim() === "notice"); NOTICE0 = r ? String(r[1] || "") : ""; $("#n-text").value = NOTICE0;
+    const sh = rows.find(x => String(x[0]).trim() === "ship"), t = String(sh ? sh[1] || "" : "").split("|");
+    $("#s-on").checked = t[0] === "Y"; $("#s-fee").value = t[1] || ""; $("#s-free").value = t[2] || ""; $("#s-note").value = t.slice(3).join("|");
+    $("#n-text").placeholder = "예: 매주 화·금 오후 4:30~5:30 사이에 무인택배함에 넣어 드려요."; }
   catch (e) { $("#n-text").placeholder = "안내문을 불러오지 못했어요. 새로고침해 주세요."; }
 }
 const key = (r) => [r.per100, r.geun, r.price, r.status, r.desc].join("|");
@@ -339,6 +356,18 @@ $("#n-save").addEventListener("click", async () => {
     NOTICE0 = t; toast("안내문을 저장했어요. 손님 화면에 반영됐어요 ✅");
   } catch (err) { toast(err.message === "denied" ? "저장이 안 됐어요. 나갔다가 비밀번호를 다시 넣어 주세요." : "저장이 안 됐어요. 인터넷 연결을 확인하고 다시 눌러 주세요.", true); }
   finally { b.disabled = false; b.textContent = "안내문 저장"; }
+});
+$("#s-save").addEventListener("click", async () => {
+  const num = (v) => String(v).replace(/[^\d]/g, ""), on = $("#s-on").checked, fee = num($("#s-fee").value), free = num($("#s-free").value), note = $("#s-note").value.replace(/\|/g, " ").trim();
+  if (on && fee === "") return toast("택배비를 넣어 주세요. (무료면 0)", true);
+  if (free && Number(free) <= Number(fee || 0)) return toast("무료배송 기준 금액을 다시 확인해 주세요.", true);
+  const b = $("#s-save"); b.disabled = true; b.textContent = "저장 중…";
+  try {
+    const res = await call({ pin: PIN, action: "batch", payload: JSON.stringify({ valueInputOption: "RAW", data: [{ range: "Settings!A3:B3", values: [["ship", [on ? "Y" : "N", fee, free, note].join("|")]] }] }) });
+    if (!res || !res.ok) throw new Error("denied");
+    toast(on ? "택배 주문을 켰어요. 손님 화면에 반영됐어요 ✅" : "택배 주문을 껐어요 ✅");
+  } catch (err) { toast(err.message === "denied" ? "저장이 안 됐어요. 나갔다가 비밀번호를 다시 넣어 주세요." : "저장이 안 됐어요. 인터넷 연결을 확인하고 다시 눌러 주세요.", true); }
+  finally { b.disabled = false; b.textContent = "택배 설정 저장"; }
 });
 $("#undo").addEventListener("click", () => { ROWS.forEach(r => { const [a,b,c,d,...e] = ORIG[r.id].split("|"); r.per100 = Number(a); r.geun = Number(b); r.price = Number(c); r.status = d; r.desc = e.join("|"); }); render(); toast("바꾸기 전으로 되돌렸어요"); });
 
