@@ -293,7 +293,8 @@ function render() {
   $("#n-so").textContent = ROWS.filter(r => r.status === "품절").length;
   document.querySelectorAll(".stat").forEach(b => b.classList.toggle("on", b.dataset.f === FILTER));
   const q = $("#q").value.trim();
-  const list = ROWS.filter(r => (FILTER === "전체" || r.status === FILTER) && (!q || r.name.includes(q)));
+  const gi = {}; ROWS.forEach((r, i) => { if (!(r.group in gi)) gi[r.group] = i; });   // 나중에 추가한 메뉴도 같은 묶음 안에 보이게 (화면 순서만, 시트 줄 순서는 그대로)
+  const list = ROWS.filter(r => (FILTER === "전체" || r.status === FILTER) && (!q || r.name.includes(q))).map((r, i) => [r, i]).sort((x, y) => gi[x[0].group] - gi[y[0].group] || x[1] - y[1]).map(x => x[0]);
   let g = "";
   $("#list").innerHTML = list.length ? list.map(r => (r.group !== g ? (g = r.group, `<div class="ghead">${esc(r.group)}</div>`) : "") + card(r)).join("") : '<div class="empty">해당하는 메뉴가 없어요.</div>';
   bar(); fillPhotos();
