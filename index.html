@@ -411,10 +411,11 @@ async function post(url, payload) {
 /* 회차 (KST 11:00 기준) */
 function kst() { const n = new Date(); return new Date(n.getTime() + (9*60 + n.getTimezoneOffset())*60000); }
 function ds(d) { const z = (n) => String(n).padStart(2,"0"); return `${d.getFullYear()}-${z(d.getMonth()+1)}-${z(d.getDate())}`; }
-/* 마감 앞당김: 가게 쉬는 날(매달 셋째 주 화요일) 회차는 전날 저녁 마감. "회차 날짜": "마감 날짜 시:분" */
-const EARLY_CLOSE = { "2026-11-17": "2026-11-16 18:00" };
+/* 마감 앞당김: 가게 쉬는 날(매달 셋째 주 화요일) 회차는 전날(월) 오후 6시 마감. 그 밖에 따로 앞당길 회차는 EARLY_CLOSE 에 "회차 날짜": "마감 날짜 시:분" */
+const EARLY_CLOSE = {};
 function closeOf(b) {   // 회차(YYYY-MM-DD)의 주문·입금 마감 시각
-  const [y,m,d] = b.split("-").map(Number), e = EARLY_CLOSE[b];
+  const [y,m,d] = b.split("-").map(Number); let e = EARLY_CLOSE[b];
+  if (!e && d >= 15 && d <= 21 && new Date(y, m-1, d).getDay() === 2) { const pv = new Date(y, m-1, d-1); e = `${ds(pv)} 18:00`; }   // 셋째 주 화요일
   if (!e) return { at: new Date(y, m-1, d, 11, 0, 0, 0), text: "오전 11:00", long: "전달일 오전 11시", early: false };
   const [ey,em,ed,eh,ei] = e.split(/[- :]/).map(Number), at = new Date(ey, em-1, ed, eh, ei, 0, 0);
   const t = `${em}월 ${ed}일(${"일월화수목금토"[at.getDay()]}) ${eh < 12 ? "오전" : "오후"} ${eh % 12 || 12}시${ei ? " " + ei + "분" : ""}`;
@@ -490,11 +491,12 @@ function countdown(c) { const ms = c - kst(); if (ms <= 0) return "마감"; cons
 
 /* 상태 */
 let qty = {}; let sending = false; let LAST = null;
-const B = batch();
+let B = batch();
 // 수량 상한은 서버(시트)와 동기화되지 않는 로컬 표시용. 실제 통제는 사장님이 시트 보고 판단.
 const left = () => Math.max(0, CONFIG.cap - Object.values(qty).reduce((a,b)=>a+b,0));
 
 function render() {
+  if (!sending) B = batch();   // 화면을 열어 둔 채 마감이 지나면 다음 회차로 자동으로 넘어감
   $("#b-label").textContent = `${pickupDay(B.cutoff)} 픽업 · ${B.closeText} 주문 마감까지`;
   $("#b-count").textContent = countdown(B.close);
   const totalQty = Object.values(qty).reduce((a,b)=>a+b,0);
@@ -550,6 +552,7 @@ document.addEventListener("visibilitychange", () => { if (!document.hidden && Da
 
 /* 주문 전송 */
 $("#submit").addEventListener("click", async () => {
+  B = batch();   // 누르는 순간 기준으로 회차를 다시 계산 (마감이 지났으면 다음 회차)
   const items = PRODUCTS.filter(p => (qty[p.id]||0) > 0).map(p => { const n = qty[p.id], g = n*unitOf(p).step;
     const nm = p.name + (p.status === "예약" ? " [예약]" : "");
     return { id:p.id, name:nm, price:p.price, qty:n, grams:g, amount:p.price*n + (p.flat||0), line:`${nm} ${amtLabel(p,n)}` }; });
