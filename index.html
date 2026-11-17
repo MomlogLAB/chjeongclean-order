@@ -131,8 +131,11 @@
   .acard .rt small { display:block; color:#888; font-size:12px; }
   .acard .re { padding:10px 0; border-top:1px solid var(--line); font-size:14px; }
   .acard .re .acts { margin-top:6px; }
-  .acard table { width:100%; border-collapse:collapse; margin-top:10px; font-size:14px; }
-  .acard th, .acard td { padding:7px 4px; border-top:1px solid var(--line); text-align:right; white-space:nowrap; }
+  .acard table { width:100%; border-collapse:collapse; margin-top:10px; font-size:13px; table-layout:auto; }
+  .acard th, .acard td { padding:7px 2px; border-top:1px solid var(--line); text-align:right; white-space:nowrap; }
+  .acard td.rate { font-weight:900; color:var(--r); }
+  .acard .big { margin:10px 0 0; padding:10px 12px; border-radius:10px; background:#F1F7F1; font-size:14px; font-weight:700; }
+  .acard .big b { font-size:20px; color:var(--g); }
   .acard th { font-size:12px; color:#888; font-weight:700; border-top:0; }
   .acard th:first-child, .acard td:first-child { text-align:left; }
   .acard tr.cur td { font-weight:900; color:var(--g); }
@@ -837,10 +840,10 @@ function batchStats() {
 function renderStats() {
   const el = $("#a-stats"), S = batchStats(); el.classList.toggle("hidden", !S.rows.length); if (!S.rows.length) return;
   const cur = $("#a-batch").value;
-  el.innerHTML = `<h3>회차별 재주문 현황</h3><p class="note" style="margin:0">누적 ${S.orders}건 · ${S.total}세대 · 그중 <b>2번 이상 주문 ${S.repeat}세대</b> (전화번호 기준)</p>
-    <table><tr><th>회차</th><th>주문</th><th>세대</th><th>재주문</th><th>신규</th><th>재주문율</th></tr>`
-    + S.rows.map((r, i) => `<tr class="${r.batch === cur ? "cur" : ""}"><td>${i + 1}회 · ${dayLabel(r.batch)}</td><td>${r.orders}</td><td>${r.homes}</td><td>${r.re}</td><td>${r.fresh}</td><td>${i ? Math.round(r.re / r.homes * 100) + "%" : "-"}</td></tr>`).join("")
-    + `</table><p class="note" style="margin:8px 0 0">재주문 = 이전 회차에 주문한 적이 있는 세대. 입금 전 주문도 포함해요.</p>`;
+  el.innerHTML = `<h3>회차별 재주문 현황</h3><div class="big">전체 재주문율 <b>${S.total ? Math.round(S.repeat / S.total * 100) : 0}%</b><br><small style="font-weight:500;color:#666">누적 ${S.total}세대 중 2번 이상 주문 ${S.repeat}세대 · 주문 ${S.orders}건</small></div>
+    <table><tr><th>회차</th><th>세대</th><th>재주문</th><th>신규</th><th>재주문율</th></tr>`
+    + S.rows.map((r, i) => `<tr class="${r.batch === cur ? "cur" : ""}"><td>${i + 1}회 ${Number(r.batch.slice(5, 7))}/${Number(r.batch.slice(8))}(${"일월화수목금토"[new Date(r.batch + "T00:00:00").getDay()]})</td><td>${r.homes}</td><td>${r.re}</td><td>${r.fresh}</td><td class="rate">${i ? Math.round(r.re / r.homes * 100) + "%" : "-"}</td></tr>`).join("")
+    + `</table><p class="note" style="margin:8px 0 0">재주문율 = 그 회차 주문 세대 중 이전 회차에도 주문한 세대 비율 (전화번호 기준, 입금 전 주문 포함).</p>`;
 }
 $("#a-re").addEventListener("click", e => { const b = e.target.closest("[data-off]"); if (!b) return;
   if (!confirm("이 손님을 안내 대상에서 뺄까요? (이 폰에만 저장돼요)")) return; const o = LS.get("cjoptout"); o.push(b.dataset.off); LS.set("cjoptout", o); renderRe(); });
