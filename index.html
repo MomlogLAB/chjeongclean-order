@@ -131,6 +131,11 @@
   .acard .rt small { display:block; color:#888; font-size:12px; }
   .acard .re { padding:10px 0; border-top:1px solid var(--line); font-size:14px; }
   .acard .re .acts { margin-top:6px; }
+  .acard table { width:100%; border-collapse:collapse; margin-top:10px; font-size:14px; }
+  .acard th, .acard td { padding:7px 4px; border-top:1px solid var(--line); text-align:right; white-space:nowrap; }
+  .acard th { font-size:12px; color:#888; font-weight:700; border-top:0; }
+  .acard th:first-child, .acard td:first-child { text-align:left; }
+  .acard tr.cur td { font-weight:900; color:var(--g); }
   .acard .re .off { flex:none; background:none; border:0; color:#999; font-size:12px; text-decoration:underline; padding:0 4px; font-weight:500; }
   .way { display:flex; gap:8px; margin:0 0 14px; }
   .way button { flex:1; border:2px solid var(--line); background:#fff; border-radius:12px; padding:12px 6px; font-size:14px; font-weight:800; color:var(--ink); font-family:inherit; }
@@ -249,6 +254,7 @@
         <div id="a-list"></div>
         <button class="btn ghost hidden" id="a-copy" style="margin-top:12px">포장 리스트 복사 (아빠 카톡용)</button>
         <div id="a-re" class="acard hidden"></div>
+        <div id="a-stats" class="acard hidden"></div>
       </div>
     </section>
   </main>
@@ -741,7 +747,7 @@ function renderAdmin() {
   $("#a-summary").innerHTML = `<small>접수 ${orders.length}건 · 입금확인 ${paid.length}건 · 매출 ${won(paid.reduce((s,o)=>s+o.total,0))}</small>
     <div style="font-weight:900;margin-top:6px">${Object.entries(agg).map(([k,v])=>`${k} <b>${fmtAmt(k, v)}</b>`).join("<br>") || "입금확인된 주문 없음"}</div>`;
   $("#a-copy").classList.toggle("hidden", !A.length);
-  renderRoute(); renderRe();
+  renderRoute(); renderRe(); renderStats();
   $("#a-list").innerHTML = orders.length ? orders.map(o => `
     <div class="order">
       <div class="top"><div>
@@ -819,6 +825,22 @@ function renderRe() {
     + (list.length ? list.map(c => `<div class="re"><b>${c.unit} ${c.name}</b> · 지난 주문 ${dayLabel(c.last)} · ${c.times}회<br><small style="color:#888">${c.names.join(", ")}</small>
         <div class="acts sms"><a class="smsbtn" href="sms:${c.tel}?&body=${encodeURIComponent(reText(c))}">주문 안내 문자</a><button class="off" data-off="${c.tel}">수신거부 처리</button></div></div>`).join("")
       : `<p class="note" style="margin:10px 0 0">${agreed ? "동의한 손님이 모두 이 회차에 주문했어요." : "아직 안내 문자에 동의한 손님이 없어요. 주문서의 '다음 회차 주문 안내 문자 받기'를 체크한 분부터 여기에 나와요."}</p>`);
+}
+/* ── 회차별 재주문 현황: 전화번호 기준으로, 이전 회차에 주문한 적 있는 세대 = 재주문 ── */
+function batchStats() {
+  const by = {}; ALL.forEach(x => { const k = telOf(x.phone); if (!x.batch || !k) return; ((by[x.batch] ||= { nos: new Set(), tels: new Set() })).nos.add(x.no); by[x.batch].tels.add(k); });
+  const seen = new Set(), count = {};
+  const rows = Object.keys(by).sort().map(b => { const t = [...by[b].tels], re = t.filter(k => seen.has(k)).length; t.forEach(k => { seen.add(k); count[k] = (count[k] || 0) + 1; });
+    return { batch: b, orders: by[b].nos.size, homes: t.length, re, fresh: t.length - re }; });
+  return { rows, total: seen.size, repeat: Object.values(count).filter(n => n >= 2).length, orders: rows.reduce((a, r) => a + r.orders, 0) };
+}
+function renderStats() {
+  const el = $("#a-stats"), S = batchStats(); el.classList.toggle("hidden", !S.rows.length); if (!S.rows.length) return;
+  const cur = $("#a-batch").value;
+  el.innerHTML = `<h3>회차별 재주문 현황</h3><p class="note" style="margin:0">누적 ${S.orders}건 · ${S.total}세대 · 그중 <b>2번 이상 주문 ${S.repeat}세대</b> (전화번호 기준)</p>
+    <table><tr><th>회차</th><th>주문</th><th>세대</th><th>재주문</th><th>신규</th><th>재주문율</th></tr>`
+    + S.rows.map((r, i) => `<tr class="${r.batch === cur ? "cur" : ""}"><td>${i + 1}회 · ${dayLabel(r.batch)}</td><td>${r.orders}</td><td>${r.homes}</td><td>${r.re}</td><td>${r.fresh}</td><td>${i ? Math.round(r.re / r.homes * 100) + "%" : "-"}</td></tr>`).join("")
+    + `</table><p class="note" style="margin:8px 0 0">재주문 = 이전 회차에 주문한 적이 있는 세대. 입금 전 주문도 포함해요.</p>`;
 }
 $("#a-re").addEventListener("click", e => { const b = e.target.closest("[data-off]"); if (!b) return;
   if (!confirm("이 손님을 안내 대상에서 뺄까요? (이 폰에만 저장돼요)")) return; const o = LS.get("cjoptout"); o.push(b.dataset.off); LS.set("cjoptout", o); renderRe(); });
