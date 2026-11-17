@@ -119,6 +119,19 @@
   .pick p { margin:10px 0 0; font-size:13px; color:var(--grey); line-height:1.5; }
   .policy { font-size:13px; line-height:1.6; background:#FFF6F4; border:1px solid #F3C9BF; border-radius:10px; padding:12px 14px; margin:0 0 14px; color:var(--ink); }
   .policy b { color:var(--r); }
+  label.agree { display:flex; gap:10px; align-items:flex-start; margin:4px 0 0; font-size:14px; font-weight:700; cursor:pointer; }
+  label.agree input { width:22px; height:22px; flex:none; margin:1px 0 0; accent-color:var(--g); }
+  label.agree small { display:block; font-weight:500; color:#888; font-size:12px; margin-top:2px; }
+  .acard { margin-top:16px; border:1px solid var(--line); border-radius:12px; padding:14px; background:#fff; }
+  .acard h3 { margin:0 0 4px; font-size:16px; font-weight:900; }
+  .acard .dong { margin:12px 0 4px; font-weight:900; color:var(--g); font-size:14px; }
+  .acard .rt { display:flex; gap:10px; align-items:flex-start; padding:8px 0; border-top:1px solid var(--line); font-size:14px; }
+  .acard .rt input { width:22px; height:22px; flex:none; accent-color:var(--g); }
+  .acard .rt.done span { color:#aaa; text-decoration:line-through; }
+  .acard .rt small { display:block; color:#888; font-size:12px; }
+  .acard .re { padding:10px 0; border-top:1px solid var(--line); font-size:14px; }
+  .acard .re .acts { margin-top:6px; }
+  .acard .re .off { flex:none; background:none; border:0; color:#999; font-size:12px; text-decoration:underline; padding:0 4px; font-weight:500; }
   .way { display:flex; gap:8px; margin:0 0 14px; }
   .way button { flex:1; border:2px solid var(--line); background:#fff; border-radius:12px; padding:12px 6px; font-size:14px; font-weight:800; color:var(--ink); font-family:inherit; }
   .way button small { display:block; font-weight:600; font-size:12px; color:#888; margin-top:2px; }
@@ -163,6 +176,7 @@
         <label><span>연락처</span><input id="f-phone" inputmode="numeric" placeholder="01012345678"></label>
         <label><span id="l-unit">동 / 호수</span><input id="f-unit" placeholder="103동 1201호"></label>
         <label><span>요청사항 (선택)</span><input id="f-memo" placeholder="국거리는 큼직하게 등"></label>
+        <label class="agree"><input type="checkbox" id="f-notify"><span>다음 회차 주문 안내 문자 받기 (선택) <small>마감 전에 한 번 알려드려요. 언제든 그만 받을 수 있어요.</small></span></label>
       </div>
       <div class="total"><span class="q" id="t-qty">0개 품목</span><span class="w" id="t-won">0원</span></div>
       <p class="note" id="t-fee" style="margin:-6px 0 12px;text-align:right"></p>
@@ -170,7 +184,7 @@
       <div class="box" style="margin-bottom:12px"><div style="font-weight:800;font-size:14px;color:var(--g)">입금 계좌 (주문하기를 누른 뒤 입금해 주세요)</div><div class="acctbox"></div></div>
       <button class="btn" id="submit" disabled>주문하기</button>
       <p class="err hidden" id="err"></p>
-      <p class="note">연락처·동호수는 전달 목적으로만 쓰고 전달 후 30일 안에 지웁니다.</p>
+      <p class="note">연락처·동호수는 전달 목적으로만 쓰고 전달 후 30일 안에 지웁니다. 안내 문자 받기를 선택하신 분께만 다음 회차 주문 안내를 보내드리며, 그만 받겠다고 하시면 바로 지웁니다.</p>
     </section>
 
     <!-- 주문 완료 -->
@@ -231,8 +245,10 @@
         <label><span>회차</span><input id="a-batch" type="date"></label>
         <button class="btn ghost" id="a-load">불러오기</button>
         <div id="a-summary" class="card hidden" style="margin-top:16px"></div>
+        <div id="a-route" class="acard hidden"></div>
         <div id="a-list"></div>
         <button class="btn ghost hidden" id="a-copy" style="margin-top:12px">포장 리스트 복사 (아빠 카톡용)</button>
+        <div id="a-re" class="acard hidden"></div>
       </div>
     </section>
   </main>
@@ -560,7 +576,7 @@ $("#submit").addEventListener("click", async () => {
   if (items.length) items.push({ id:"fee", name:"배달비", price:F.amount, qty:1, grams:0, amount:F.amount, line:`배달비 ${F.short}` });
   const o = {
     no: "CH" + Date.now().toString().slice(-6), batch: B.batch,
-    name: $("#f-name").value.trim(), phone: $("#f-phone").value.replace(/-/g,""), unit: (isShip() ? "[택배] " : "") + $("#f-unit").value.trim(), memo: $("#f-memo").value.trim(),
+    name: $("#f-name").value.trim(), phone: $("#f-phone").value.replace(/-/g,""), unit: (isShip() ? "[택배] " : "") + $("#f-unit").value.trim(), memo: ($("#f-memo").value.trim() + ($("#f-notify").checked ? " " + AGREE : "")).trim(),
     items, total: items.reduce((s,i)=>s+i.amount,0), status:"접수", at: kst().toISOString(),
   };
   // 시트 1주문 1줄용: 품목 글자 / 포장 계산용 코드(품목코드:그램) / 고기 총 그램
@@ -589,7 +605,7 @@ $("#d-paid").addEventListener("click", async () => {
   try { await post(CONFIG.hook.paid, { no: LAST.no, name: LAST.name, unit: LAST.unit, total: LAST.total, depositor: LAST.name }); $("#d-paid-ok").classList.remove("hidden"); showPickup(); }
   catch { alert("알림 전송이 안 됐어요. 다시 눌러주세요."); $("#d-paid").disabled = false; }
 });
-$("#again").addEventListener("click", () => { qty = {}; ["#f-name","#f-phone","#f-unit","#f-memo"].forEach(s => $(s).value = ""); $("#v-done").classList.add("hidden"); $("#v-order").classList.remove("hidden"); render(); });
+$("#again").addEventListener("click", () => { qty = {}; $("#f-notify").checked = false; ["#f-name","#f-phone","#f-unit","#f-memo"].forEach(s => $(s).value = ""); $("#v-done").classList.add("hidden"); $("#v-order").classList.remove("hidden"); render(); });
 
 /* 탭 */
 document.querySelectorAll("nav button").forEach(b => b.addEventListener("click", () => {
@@ -641,7 +657,11 @@ $("#r-send").addEventListener("click", async () => {
 
 
 /* ===== 관리자 ===== */
-let PIN = "", A = [];
+let PIN = "", A = [], ALL = [];
+const AGREE = "[안내문자 동의]";                                   // 주문서에서 동의하면 요청사항 끝에 붙음
+const memoOf = (m) => String(m || "").replace(AGREE, "").trim();   // 화면·포장 리스트에는 꼬리표 빼고 보여주기
+const normBatch = (v) => { const m = String(v||"").match(/(\d{4})\D+(\d{1,2})\D+(\d{1,2})/); return m ? `${m[1]}-${m[2].padStart(2,"0")}-${m[3].padStart(2,"0")}` : ""; };
+const LS = { get(k) { try { return JSON.parse(localStorage.getItem(k) || "[]"); } catch (e) { return []; } }, set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} } };
 const todayStr = () => ds(kst());
 $("#a-batch").value = B.batch;
 $("#a-enter").addEventListener("click", async () => {
@@ -658,6 +678,7 @@ async function loadAdmin() {
     if (!Array.isArray(rows)) return false;
     const want = $("#a-batch").value;   // 시트 날짜 형식이 달라도 맞추기 (2026-11-10 / 2026. 11. 10 등)
     const norm = (v) => { const m = String(v||"").match(/(\d{4})\D+(\d{1,2})\D+(\d{1,2})/); return m ? `${m[1]}-${m[2].padStart(2,"0")}-${m[3].padStart(2,"0")}` : ""; };
+    ALL = rows.filter(x => x && x.no).map(x => ({ ...x, batch: normBatch(x.batch) }));
     A = expandRows(rows.filter(x => x && x.no && norm(x.batch) === want)); renderAdmin(); return true;
   } catch (e) { return false; }
 }
@@ -689,8 +710,8 @@ function packingText() {
   const day = dayLabel($("#a-batch").value);   // 날짜를 카톡 링크로 안 바뀌게 "11월 10일(화)" 형식
   const sum = (rows) => { const g = {}; rows.forEach(x => { if (x.item !== "배달비") g[x.item] = (g[x.item]||0) + Number(x.qty||0); }); return Object.entries(g).map(([k,v]) => `- ${k} ${fmtAmt(k, v)}`).join("\n") || "- 없음"; };
   const paidRows = A.filter(x => x.status === "입금" || x.status === "전달"), waitRows = A.filter(x => x.status === "접수");
-  const all = groupOrders(A).sort((a,b) => String(a.unit).localeCompare(String(b.unit), "ko"));
-  const line = (o) => `${o.unit} ${o.name} (${o.items.filter(i => !i.startsWith("배달비")).join(", ")})${o.memo ? " *" + o.memo : ""}`;
+  const all = groupOrders(A).sort(byRoute);
+  const line = (o) => `${o.unit} ${o.name} (${o.items.filter(i => !i.startsWith("배달비")).join(", ")})${memoOf(o.memo) ? " *" + memoOf(o.memo) : ""}`;
   const paidO = all.filter(o => o.status !== "접수"), waitO = all.filter(o => o.status === "접수");
   return `[청정한우 사다드림 ${day} 픽업]\n\n▶ 포장 리스트 (입금 확인 ${paidO.length}건)\n${sum(paidRows)}`
     + (waitO.length ? `\n\n▶ 입금 대기 ${waitO.length}건 (참고)\n${sum(waitRows)}` : "")
@@ -720,12 +741,13 @@ function renderAdmin() {
   $("#a-summary").innerHTML = `<small>접수 ${orders.length}건 · 입금확인 ${paid.length}건 · 매출 ${won(paid.reduce((s,o)=>s+o.total,0))}</small>
     <div style="font-weight:900;margin-top:6px">${Object.entries(agg).map(([k,v])=>`${k} <b>${fmtAmt(k, v)}</b>`).join("<br>") || "입금확인된 주문 없음"}</div>`;
   $("#a-copy").classList.toggle("hidden", !A.length);
+  renderRoute(); renderRe();
   $("#a-list").innerHTML = orders.length ? orders.map(o => `
     <div class="order">
       <div class="top"><div>
         <div class="who">${o.unit} ${o.name} <span class="ph">${o.no}</span></div>
         <div class="sub">${o.items.join(", ")} · <b>${won(o.total)}</b></div>
-        ${o.memo ? `<div class="memo">* ${o.memo}</div>` : ""}
+        ${memoOf(o.memo) ? `<div class="memo">* ${memoOf(o.memo)}</div>` : ""}
         <div class="ph">${telOf(o.phone)}</div>
       </div><span class="st ${o.status==="입금"?"paid":o.status==="전달"?"done":""}">${STATUS[o.status]}</span></div>
       ${o.status === "접수" ? `<p class="note" style="margin:8px 0 0">입금 확인 전이에요. 시트 상태(I열)를 '입금'으로 바꾸고 [불러오기]를 누르면 문자 버튼이 나와요.</p>
@@ -742,6 +764,64 @@ $("#a-list").addEventListener("click", async (e) => {
   try { await post(CONFIG.hook.setStatus, { pin: PIN, no: b.dataset.no, status: b.dataset.st }); await loadAdmin(); }
   catch (err) { alert("저장이 안 됐어요. 다시 눌러주세요."); b.disabled = false; }
 });
+/* ── 배송 순서표: 입금 확인된 주문을 동 → 호 순서로 묶어서 보여주고, 넣은 집은 체크 (체크는 이 폰에만 저장) ── */
+function dongHo(unit) {
+  const u = String(unit || "");
+  if (shipUnit(u)) return { dong: 99999, ho: 0, label: "택배 발송" };
+  const d = u.match(/(\d{2,4})\s*동/) || u.match(/^\s*(\d{3,4})\s*[-–\s]/), h = u.match(/(\d{3,4})\s*호/) || u.match(/[-–\s](\d{3,4})\s*$/);
+  return d ? { dong: Number(d[1]), ho: h ? Number(h[1]) : 0, label: d[1] + "동 무인택배함" } : { dong: 99998, ho: 0, label: "동을 못 읽은 주문" };
+}
+function byRoute(a, b) { const x = dongHo(a.unit), y = dongHo(b.unit); return x.dong - y.dong || x.ho - y.ho || String(a.unit).localeCompare(String(b.unit), "ko"); }
+function routeOrders() { return groupOrders(A).filter(o => o.status !== "접수").sort(byRoute); }
+function renderRoute() {
+  const os = routeOrders(), el = $("#a-route"); el.classList.toggle("hidden", !os.length); if (!os.length) return;
+  const key = "cjdone:" + $("#a-batch").value, done = LS.get(key), groups = {};
+  os.forEach(o => { const g = dongHo(o.unit); (groups[g.label] ||= []).push(o); });
+  const nDong = Object.keys(groups).filter(k => k.includes("무인택배함")).length;
+  el.innerHTML = `<h3>배송 순서표</h3><p class="note" style="margin:0">입금 확인 ${os.length}건 · 택배함 ${nDong}곳 · 넣음 <b>${os.filter(o => done.includes(o.no)).length}/${os.length}</b></p>`
+    + Object.entries(groups).map(([label, list]) => `<div class="dong">${label} (${list.length}건)</div>` + list.map(o => `
+      <label class="rt ${done.includes(o.no) ? "done" : ""}"><input type="checkbox" data-done="${o.no}" ${done.includes(o.no) ? "checked" : ""}>
+        <span><b>${o.unit.replace(/^\[택배\]\s*/, "")}</b> ${o.name}<small>${o.items.filter(i => !i.startsWith("배달비")).join(", ")}${memoOf(o.memo) ? " · *" + memoOf(o.memo) : ""}</small></span></label>`).join("")).join("")
+    + `<button class="btn ghost" id="a-route-copy" style="margin-top:12px">배송 순서 복사</button>`;
+}
+function routeText() {
+  const os = routeOrders(), groups = {}; os.forEach(o => { const g = dongHo(o.unit); (groups[g.label] ||= []).push(o); });
+  return `[청정한우 사다드림 ${dayLabel($("#a-batch").value)} 배송 순서 · ${os.length}건]\n` + Object.entries(groups).map(([label, list]) => `\n▶ ${label} (${list.length}건)\n` + list.map(o => `□ ${o.unit.replace(/^\[택배\]\s*/, "")} ${o.name} (${o.items.filter(i => !i.startsWith("배달비")).join(", ")})${memoOf(o.memo) ? " *" + memoOf(o.memo) : ""}`).join("\n")).join("\n");
+}
+$("#a-route").addEventListener("change", e => { const c = e.target.closest("[data-done]"); if (!c) return;
+  const key = "cjdone:" + $("#a-batch").value; let d = LS.get(key).filter(n => n !== c.dataset.done); if (c.checked) d.push(c.dataset.done); LS.set(key, d); renderRoute(); });
+$("#a-route").addEventListener("click", async e => { if (!e.target.closest("#a-route-copy")) return; const b = $("#a-route-copy");
+  try { await navigator.clipboard.writeText(routeText()); b.textContent = "복사됐어요"; setTimeout(() => { if ($("#a-route-copy")) $("#a-route-copy").textContent = "배송 순서 복사"; }, 2000); } catch { prompt("아래 내용을 복사하세요", routeText()); } });
+
+/* ── 재주문 안내: 안내 문자에 동의한 손님 중, 전에 주문했는데 이 회차에는 아직 주문이 없는 분 ── */
+function reList() {
+  const cur = $("#a-batch").value, by = {};
+  ALL.forEach(x => { const k = telOf(x.phone); if (!k) return; (by[k] ||= []).push(x); });
+  const off = LS.get("cjoptout"); let agreed = 0;
+  const list = Object.entries(by).map(([tel, rows]) => {
+    if (!rows.some(x => String(x.memo || "").includes(AGREE)) || off.includes(tel)) return null; agreed++;
+    if (rows.some(x => x.batch === cur)) return null;
+    const past = rows.filter(x => x.batch && x.batch < cur && stNorm(x.status) !== "접수").sort((a, b) => b.batch.localeCompare(a.batch)); if (!past.length) return null;
+    const names = []; expandRows(past.filter(x => x.batch === past[0].batch)).forEach(x => { const n = String(x.item || "").split("\n")[0].replace(/\s*\[예약\]/, "").replace(/\s*\(.*?\)\s*$/, ""); if (n && n !== "배달비" && !names.includes(n)) names.push(n); });
+    return { tel, name: past[0].name, unit: past[0].unit, last: past[0].batch, times: new Set(past.map(x => x.batch)).size, names };
+  }).filter(Boolean).sort((a, b) => b.last.localeCompare(a.last));
+  const noAgree = Object.entries(by).filter(([tel, rows]) => !rows.some(x => String(x.memo || "").includes(AGREE))).length;
+  return { list, agreed, noAgree };
+}
+function reText(c) {
+  const b = $("#a-batch").value, k = closeOf(b), what = c.names.slice(0, 2).join("·");
+  return `(광고) [청정한우 사다드림] ${c.name}님, 지난번 ${what ? what + " " : "고기 "}맛있게 드셨나요? 😊\n${dayLabel(b)} 배송 주문은 ${k.early ? k.text : dayLabel(b) + " 오전 11시"}까지 받아요.\n\n주문하기: ${location.origin}${location.pathname}\n\n안내를 그만 받으시려면 '수신거부'라고 답장 주세요.`;
+}
+function renderRe() {
+  const el = $("#a-re"); if (!ALL.length) { el.classList.add("hidden"); return; }
+  const { list, agreed, noAgree } = reList(); el.classList.remove("hidden");
+  el.innerHTML = `<h3>재주문 안내</h3><p class="note" style="margin:0">안내 문자 동의 ${agreed}명 중 <b>이 회차 미주문 ${list.length}명</b>. 오후 9시~오전 8시에는 보내지 마세요.${noAgree ? `<br>동의하지 않은 손님 ${noAgree}명은 문자 대신 공구방 공지로 안내해 주세요.` : ""}</p>`
+    + (list.length ? list.map(c => `<div class="re"><b>${c.unit} ${c.name}</b> · 지난 주문 ${dayLabel(c.last)} · ${c.times}회<br><small style="color:#888">${c.names.join(", ")}</small>
+        <div class="acts sms"><a class="smsbtn" href="sms:${c.tel}?&body=${encodeURIComponent(reText(c))}">주문 안내 문자</a><button class="off" data-off="${c.tel}">수신거부 처리</button></div></div>`).join("")
+      : `<p class="note" style="margin:10px 0 0">${agreed ? "동의한 손님이 모두 이 회차에 주문했어요." : "아직 안내 문자에 동의한 손님이 없어요. 주문서의 '다음 회차 주문 안내 문자 받기'를 체크한 분부터 여기에 나와요."}</p>`);
+}
+$("#a-re").addEventListener("click", e => { const b = e.target.closest("[data-off]"); if (!b) return;
+  if (!confirm("이 손님을 안내 대상에서 뺄까요? (이 폰에만 저장돼요)")) return; const o = LS.get("cjoptout"); o.push(b.dataset.off); LS.set("cjoptout", o); renderRe(); });
 $("#a-copy").addEventListener("click", async () => {
   try { await navigator.clipboard.writeText(packingText()); $("#a-copy").textContent = "복사됐어요 — 카톡에 붙여넣기"; setTimeout(()=>$("#a-copy").textContent="포장 리스트 복사 (아빠 카톡용)", 2000); }
   catch { prompt("아래 내용을 복사하세요", packingText()); }
