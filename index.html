@@ -310,6 +310,8 @@ const PRODUCTS = [
   { id:"b30", group:"한우 1+/1++ · 육회·육사시미", name:"육회 (꾸리살)", price:0, per100:6800, geun:40800 },
   { id:"b24", group:"한우 1+/1++ · 육회·육사시미", name:"육사시미 (우둔살)", price:0, per100:6500, geun:39000 },
   { id:"b31", group:"한우 1+/1++ · 육회·육사시미", name:"육사시미 (꾸리살)", price:0, per100:6800, geun:40800 },
+  { id:"b37", group:"한우 1+/1++ · 육회·육사시미", name:"육회, 육사시미 소스 (간장)", price:1000, note:"기본 소스 외에 더 필요하실 때 추가해 주세요" },
+  { id:"b38", group:"한우 1+/1++ · 육회·육사시미", name:"육회, 육사시미 소스 (고추장)", price:1000, note:"기본 소스 외에 더 필요하실 때 추가해 주세요" },
   { id:"b11", group:"한우 1+/1++ · 불고기, 다짐육(손다짐육)", name:"불고기", price:0, per100:4500, geun:27000, note:"냉동" },
   { id:"b14", group:"한우 1+/1++ · 불고기, 다짐육(손다짐육)", name:"다짐육", price:0, per100:6000, geun:36000 },
   { id:"b15", group:"한우 1+/1++ · 불고기, 다짐육(손다짐육)", name:"손다짐육", price:0, per100:6800, geun:40800 },
@@ -360,6 +362,7 @@ const UNIT = {
   b26: { step:150, label:(n)=>`${n}개`, sub:(n)=>`1개 150g · 총 ${n*150}g` },
   b25: { step:1500, label:(n)=>`${n}병`, sub:(n)=>`${(n*1.5).toLocaleString("ko-KR")}L`, bottle:true },
   b18: { step:1500, label:(n)=>`${n}세트`, sub:(n)=>`육수 ${(n*1.5).toLocaleString("ko-KR")}L + 고기 ${n*150}g`, bottle:true },
+  b37: { step:1, label:(n)=>`${n}개`, sub:()=>"추가 소스", bottle:true }, b38: { step:1, label:(n)=>`${n}개`, sub:()=>"추가 소스", bottle:true },
   b08: { min:2 }, p04: { min:2 }, // 모듬: 최소 300g, 이후 150g씩
   b21: { step:600 }, b22: { step:600 }, p15: { step:600 }, p16: { step:600 }, u01: { step:600 }, u02: { step:600 },
 };
@@ -368,7 +371,7 @@ const unitOf = (p) => ({ step:150, min:1, ...(UNIT[p.id]||{}) });
 PRODUCTS.forEach(p => { if (p.geun) p.price = Math.round(p.geun * unitOf(p).step / 600); });
 const amtLabel = (p, n) => { const u = unitOf(p); return u.label ? u.label(n) : `${(n*u.step).toLocaleString("ko-KR")}g`; };
 const amtSub = (p, n) => { const u = unitOf(p); if (u.sub) return u.sub(n); const g = n*u.step; return u.step===150 ? `약 ${g/150}인분` : `${u.step}g 단위`; };
-const fmtAmt = (name, v) => { if (name === "배달비") return ""; if (/^사골육수[+&]/.test(name)) return `${Number(v)/1500}세트`; if (/^사골육수/.test(name)) return `${Number(v)/1500}병`; if (/^삶은고기/.test(name)) return `${Number(v)/150}개`; if (String(name).startsWith("팩 국거리")) return `${Number(v)/120}팩`; const p = PRODUCTS.find(x=>x.name===name); return p && unitOf(p).bottle ? `${Number(v)/1500}병` : `${Number(v).toLocaleString("ko-KR")}g`; };
+const fmtAmt = (name, v) => { if (name === "배달비") return ""; if (/^사골육수[+&]/.test(name)) return `${Number(v)/1500}세트`; if (/^사골육수/.test(name)) return `${Number(v)/1500}병`; if (/^삶은고기/.test(name)) return `${Number(v)/150}개`; if (/소스 \(/.test(name)) return `${Number(v)}개`; if (String(name).startsWith("팩 국거리")) return `${Number(v)/120}팩`; const p = PRODUCTS.find(x=>x.name===name); return p && unitOf(p).bottle ? `${Number(v)/1500}병` : `${Number(v).toLocaleString("ko-KR")}g`; };
 /* ============================================ */
 
 /* 메뉴판 시트 읽기 (가격·설명·상태). 실패하면 위에 적힌 기본값 그대로 사용 */
