@@ -123,6 +123,8 @@
   label.agree input { width:22px; height:22px; flex:none; margin:1px 0 0; accent-color:var(--g); }
   label.agree small { display:block; font-weight:500; color:#888; font-size:12px; margin-top:2px; }
   .acard { margin-top:16px; border:1px solid var(--line); border-radius:12px; padding:14px; background:#fff; }
+  .ctag { display:inline-block; font-size:11px; font-weight:800; padding:2px 7px; border-radius:99px; background:#EEE; color:#666; vertical-align:middle; text-decoration:none; }
+  .ctag.re { background:#FFE9B8; color:#8A5A00; }
   .acard h3 { margin:0 0 4px; font-size:16px; font-weight:900; }
   .acard .dong { margin:12px 0 4px; font-weight:900; color:var(--g); font-size:14px; }
   .acard .rt { display:flex; gap:10px; align-items:flex-start; padding:8px 0; border-top:1px solid var(--line); font-size:14px; }
@@ -745,6 +747,12 @@ function smsText(kind, o) {
   return `[청정한우 사다드림] ${o.name}님, 지금 ${lockerOf(o.unit)}에 넣었어요.\n\n택배함에서 세대 비밀번호를 누르고 찾아가세요. 신선식품이라 최대한 빨리 꺼내 주세요!`;
 }
 function smsLink(kind, o) { return `sms:${telOf(o.phone)}?&body=${encodeURIComponent(smsText(kind, o))}`; }
+// 주문자 옆 표시: 이 회차보다 앞선 회차에 주문한 적이 있으면 재주문 (전화번호 기준)
+function custTag(o) {
+  const cur = $("#a-batch").value, k = telOf(o.phone); if (!k) return "";
+  const n = new Set(ALL.filter(x => telOf(x.phone) === k && x.batch && x.batch < cur).map(x => x.batch)).size;
+  return n ? `<span class="ctag re">재주문 ${n + 1}번째</span>` : `<span class="ctag">신규</span>`;
+}
 function renderAdmin() {
   const orders = groupOrders(A);
   const paid = orders.filter(o=>o.status!=="접수");
@@ -757,7 +765,7 @@ function renderAdmin() {
   $("#a-list").innerHTML = orders.length ? orders.map(o => `
     <div class="order">
       <div class="top"><div>
-        <div class="who">${o.unit} ${o.name} <span class="ph">${o.no}</span></div>
+        <div class="who">${o.unit} ${o.name} ${custTag(o)} <span class="ph">${o.no}</span></div>
         <div class="sub">${o.items.join(", ")} · <b>${won(o.total)}</b></div>
         ${memoOf(o.memo) ? `<div class="memo">* ${memoOf(o.memo)}</div>` : ""}
         <div class="ph">${telOf(o.phone)}</div>
@@ -793,7 +801,7 @@ function renderRoute() {
   el.innerHTML = `<h3>배송 순서표</h3><p class="note" style="margin:0">입금 확인 ${os.length}건 · 택배함 ${nDong}곳 · 넣음 <b>${os.filter(o => done.includes(o.no)).length}/${os.length}</b></p>`
     + Object.entries(groups).map(([label, list]) => `<div class="dong">${label} (${list.length}건)</div>` + list.map(o => `
       <label class="rt ${done.includes(o.no) ? "done" : ""}"><input type="checkbox" data-done="${o.no}" ${done.includes(o.no) ? "checked" : ""}>
-        <span><b>${o.unit.replace(/^\[택배\]\s*/, "")}</b> ${o.name}<small>${o.items.filter(i => !i.startsWith("배달비")).join(", ")}${memoOf(o.memo) ? " · *" + memoOf(o.memo) : ""}</small></span></label>`).join("")).join("")
+        <span><b>${o.unit.replace(/^\[택배\]\s*/, "")}</b> ${o.name} ${custTag(o)}<small>${o.items.filter(i => !i.startsWith("배달비")).join(", ")}${memoOf(o.memo) ? " · *" + memoOf(o.memo) : ""}</small></span></label>`).join("")).join("")
     + `<button class="btn ghost" id="a-route-copy" style="margin-top:12px">배송 순서 복사</button>`;
 }
 function routeText() {
