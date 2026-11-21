@@ -318,8 +318,8 @@ const CAP_OVR = { b08: "0.5cm 두께<br>약 500g (±10g)" }; // 사진별 문구
 const capOf = (id) => CAP_OVR[id] || CAP_TXT;
 const PHOTOS = ["b29","b27","b21","b08","b01","b04","b12","b13","b03","b06","b11","b19","b09","p01","p02","p03","p12","p13"];
 const PRODUCTS = [
-  { id:"b39", group:"한우 1등급 · 노마진 이벤트 (이번 경매 물량 한정)", name:"1등급 명품등심", price:0, per100:9900, geun:59400 },
-  { id:"b40", group:"한우 1등급 · 노마진 이벤트 (이번 경매 물량 한정)", name:"1등급 채끝등심", price:0, per100:9900, geun:59400 },
+  { id:"b39", group:"한우 1등급 · 박리다매 이벤트 (이번 경매 물량 한정)", name:"1등급 명품등심", price:0, per100:9900, geun:59400 },
+  { id:"b40", group:"한우 1등급 · 박리다매 이벤트 (이번 경매 물량 한정)", name:"1등급 채끝등심", price:0, per100:9900, geun:59400 },
   { id:"b08", group:"한우 1+/1++ · 구이용", name:"한우 모듬구이 (업진살·부채살·아롱구이)", price:0, per100:13500, geun:81000 },
   { id:"b01", group:"한우 1+/1++ · 구이용", name:"살치살", price:0, per100:15500, geun:93000 },
   { id:"b04", group:"한우 1+/1++ · 구이용", name:"갈비살", price:0, per100:14500, geun:87000 },
@@ -377,7 +377,7 @@ const PRODUCTS = [
   { id:"u02", group:"LA갈비 · 미국산", name:"LA갈비 탕용", price:0, per100:4800, geun:28800 },
 ];
 const GROUP_NOTE = {
-  "한우 1등급 · 노마진 이벤트 (이번 경매 물량 한정)": "이 가격은 이번 물량 한정 금액입니다 · 300g부터 주문 · 물량이 소진되면 조기 마감돼요 · 11월 감사 서비스와 중복 적용되지 않아요.",
+  "한우 1등급 · 박리다매 이벤트 (이번 경매 물량 한정)": "이 가격은 이번 물량 한정 금액입니다 · 300g부터 주문 · 물량이 소진되면 조기 마감돼요 · 11월 감사 서비스와 중복 적용되지 않아요.",
   "한우 1+/1++ · 구이용": "등급은 그날 들어온 소에 따라 1+ 또는 1++. 스테이크, 구이용 원하시는 두께는 요청사항에 적어주세요.",
   "한우 1+/1++ · 육회·육사시미": "기본 소스가 함께 제공돼요. 픽업 당일 손질해요. 받으신 날 바로 드세요 (냉장 보관).",
   "한우 1+/1++ · 갈비": "갈비는 600g 단위예요.",
@@ -603,21 +603,21 @@ setInterval(render, 30000);
 /* 메뉴판 반영: 처음 열 때 + 화면으로 돌아올 때(1분 이상 지났으면) */
 const syncCatalog = () => { loadCatalog(ok => { if (!ok) return; PRODUCTS.forEach(p => { if (p.status === "품절") delete qty[p.id]; }); render(); loadPhotos(); showEvent(); });
   gviz("&sheet=Settings", rows => { const r = rows && rows.find(x => String(x[0]).trim() === "notice"); if (r) applyNotice(r[1]); const sh = rows && rows.find(x => String(x[0]).trim() === "ship"); applyShip(sh ? sh[1] : ""); }); };
-/* ── 노마진 이벤트 팝업: 이벤트 고기(b39·b40)가 하나라도 판매 중일 때만, 하루에 한 번 ── */
+/* ── 박리다매 이벤트 팝업: 이벤트 고기(b39·b40)가 하나라도 판매 중일 때만, 하루에 한 번 ── */
 const EVENT_IDS = ["b39", "b40"];
 function showEvent() {
   const live = PRODUCTS.filter(p => EVENT_IDS.includes(p.id) && p.status !== "품절"); if (!live.length || document.querySelector(".ev-back")) return;
   try { if (localStorage.getItem("cj_ev_hide") === ds(kst()) || sessionStorage.getItem("cj_ev_seen")) return; sessionStorage.setItem("cj_ev_seen", "1"); } catch (e) {}
   const d = document.createElement("div"); d.className = "ev-back";
-  d.innerHTML = `<div class="ev" role="dialog" aria-label="한우 1등급 노마진 이벤트">
+  d.innerHTML = `<div class="ev" role="dialog" aria-label="한우 1등급 박리다매 이벤트">
     <div class="ev-top"><button class="x" data-ev="close" aria-label="닫기">✕</button>
       <div class="kick">LIMITED · 이번 경매 물량 한정</div>
-      <h3>한우 1등급<br><em>노마진</em> 이벤트</h3>
-      <p>원물이 좋아 1등급으로 받아왔어요.<br>이번에 들어온 소만 마진 없이 드립니다.</p></div>
+      <h3>한우 1등급<br><em>박리다매</em> 이벤트</h3>
+      <p>원물이 좋아 1등급으로 받아왔어요.<br>적게 남기고 많이 나누는 가격으로 준비했습니다.</p></div>
     <div class="ev-body">
       ${live.map(p => `<div class="ev-row"><b>${p.name}<small>한우 1등급 · 구이용</small></b><span class="pr">100g<strong>${won(p.per100)}</strong></span></div>`).join("")}
       <div class="ev-chips"><span>300g부터 · ${won(live[0].price * 2)}</span><span>한정 수량</span><span>소진 시 조기 마감</span></div>
-      <p class="ev-note"><b style="color:#17352A">이 가격은 이번 물량 한정 금액입니다.</b><br>노마진 상품이라 11월 감사 서비스와 중복 적용되지 않아요.</p></div>
+      <p class="ev-note"><b style="color:#17352A">이 가격은 이번 물량 한정 금액입니다.</b><br>마진을 줄인 특가 상품이라 11월 감사 서비스와 중복 적용되지 않아요.</p></div>
     <div class="ev-foot"><p class="ev-hurry">빠른 마감이 예상돼요. 서둘러 선점하세요!</p><button class="go" data-ev="go">이벤트 고기 담으러 가기</button><button class="later" data-ev="hide">오늘은 그만 보기</button></div></div>`;
   d.addEventListener("click", e => { const a = e.target.closest("[data-ev]"), act = a ? a.dataset.ev : (e.target === d ? "close" : ""); if (!act) return;
     if (act === "hide") { try { localStorage.setItem("cj_ev_hide", ds(kst())); } catch (x) {} }
