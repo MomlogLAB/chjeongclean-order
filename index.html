@@ -376,7 +376,7 @@ const PRODUCTS = [
   { id:"u02", group:"LA갈비 · 미국산", name:"LA갈비 탕용", price:0, per100:4800, geun:28800 },
 ];
 const GROUP_NOTE = {
-  "한우 1등급 · 노마진 이벤트 (이번 경매 물량 한정)": "300g부터 주문 · 물량이 소진되면 조기 마감돼요 · 11월 감사 서비스와 중복 적용되지 않아요.",
+  "한우 1등급 · 노마진 이벤트 (이번 경매 물량 한정)": "이 가격은 이번 물량 한정 금액입니다 · 300g부터 주문 · 물량이 소진되면 조기 마감돼요 · 11월 감사 서비스와 중복 적용되지 않아요.",
   "한우 1+/1++ · 구이용": "등급은 그날 들어온 소에 따라 1+ 또는 1++. 스테이크, 구이용 원하시는 두께는 요청사항에 적어주세요.",
   "한우 1+/1++ · 육회·육사시미": "기본 소스가 함께 제공돼요. 픽업 당일 손질해요. 받으신 날 바로 드세요 (냉장 보관).",
   "한우 1+/1++ · 갈비": "갈비는 600g 단위예요.",
@@ -616,7 +616,7 @@ function showEvent() {
     <div class="ev-body">
       ${live.map(p => `<div class="ev-row"><b>${p.name}<small>한우 1등급 · 구이용</small></b><span class="pr">100g<strong>${won(p.per100)}</strong></span></div>`).join("")}
       <div class="ev-chips"><span>300g부터 · ${won(live[0].price * 2)}</span><span>한정 수량</span><span>소진 시 조기 마감</span></div>
-      <p class="ev-note">노마진 상품이라 11월 감사 서비스와 중복 적용되지 않아요.</p></div>
+      <p class="ev-note"><b style="color:#17352A">이 가격은 이번 물량 한정 금액입니다.</b><br>노마진 상품이라 11월 감사 서비스와 중복 적용되지 않아요.</p></div>
     <div class="ev-foot"><button class="go" data-ev="go">이벤트 고기 담으러 가기</button><button class="later" data-ev="hide">오늘은 그만 보기</button></div></div>`;
   d.addEventListener("click", e => { const a = e.target.closest("[data-ev]"), act = a ? a.dataset.ev : (e.target === d ? "close" : ""); if (!act) return;
     if (act === "hide") { try { localStorage.setItem("cj_ev_hide", ds(kst())); } catch (x) {} }
