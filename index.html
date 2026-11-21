@@ -139,6 +139,7 @@
   .ev-chips span { font-size:12px; font-weight:700; color:#17352A; border:1px solid #C9BFA6; border-radius:99px; padding:5px 10px; background:#fff; }
   .ev-note { margin:12px 0 0; font-size:12px; line-height:1.6; color:#8B8371; }
   .ev-foot { padding:16px 24px calc(18px + env(safe-area-inset-bottom)); }
+  .ev-hurry { margin:0 0 10px; text-align:center; font-size:13.5px; font-weight:800; color:#A8752A; }
   .ev-foot .go { width:100%; border:0; border-radius:12px; padding:16px; font-size:16px; font-weight:900; background:#17352A; color:#F4EEDD; font-family:inherit; }
   .ev-foot .later { display:block; margin:12px auto 0; border:0; background:none; color:#8B8371; font-size:13px; text-decoration:underline; font-family:inherit; }
   label.agree { display:flex; gap:10px; align-items:flex-start; margin:4px 0 0; font-size:14px; font-weight:700; cursor:pointer; }
@@ -617,7 +618,7 @@ function showEvent() {
       ${live.map(p => `<div class="ev-row"><b>${p.name}<small>한우 1등급 · 구이용</small></b><span class="pr">100g<strong>${won(p.per100)}</strong></span></div>`).join("")}
       <div class="ev-chips"><span>300g부터 · ${won(live[0].price * 2)}</span><span>한정 수량</span><span>소진 시 조기 마감</span></div>
       <p class="ev-note"><b style="color:#17352A">이 가격은 이번 물량 한정 금액입니다.</b><br>노마진 상품이라 11월 감사 서비스와 중복 적용되지 않아요.</p></div>
-    <div class="ev-foot"><button class="go" data-ev="go">이벤트 고기 담으러 가기</button><button class="later" data-ev="hide">오늘은 그만 보기</button></div></div>`;
+    <div class="ev-foot"><p class="ev-hurry">빠른 마감이 예상돼요. 서둘러 선점하세요!</p><button class="go" data-ev="go">이벤트 고기 담으러 가기</button><button class="later" data-ev="hide">오늘은 그만 보기</button></div></div>`;
   d.addEventListener("click", e => { const a = e.target.closest("[data-ev]"), act = a ? a.dataset.ev : (e.target === d ? "close" : ""); if (!act) return;
     if (act === "hide") { try { localStorage.setItem("cj_ev_hide", ds(kst())); } catch (x) {} }
     d.remove(); if (act === "go") { const el = document.querySelector(`.plus[data-id="${live[0].id}"]`); if (el) el.closest(".item").previousElementSibling.scrollIntoView({ behavior:"smooth", block:"start" }); } });
