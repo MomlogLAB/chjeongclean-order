@@ -119,6 +119,28 @@
   .pick p { margin:10px 0 0; font-size:13px; color:var(--grey); line-height:1.5; }
   .policy { font-size:13px; line-height:1.6; background:#FFF6F4; border:1px solid #F3C9BF; border-radius:10px; padding:12px 14px; margin:0 0 14px; color:var(--ink); }
   .policy b { color:var(--r); }
+  .ev-back { position:fixed; inset:0; background:rgba(20,24,22,.62); z-index:60; display:flex; align-items:flex-end; justify-content:center; padding:0; animation:evf .25s ease; }
+  @keyframes evf { from { opacity:0; } to { opacity:1; } }
+  @keyframes evu { from { transform:translateY(24px); opacity:0; } to { transform:none; opacity:1; } }
+  .ev { width:100%; max-width:480px; background:#FBF8F1; border-radius:22px 22px 0 0; overflow:hidden; animation:evu .3s ease; box-shadow:0 -10px 40px rgba(0,0,0,.25); }
+  .ev-top { background:#17352A; color:#F4EEDD; padding:26px 24px 22px; position:relative; }
+  .ev-top .x { position:absolute; top:14px; right:14px; width:36px; height:36px; border:0; background:rgba(255,255,255,.1); color:#F4EEDD; border-radius:50%; font-size:18px; line-height:1; }
+  .ev-top .kick { font-size:11px; letter-spacing:.22em; font-weight:700; color:#C9A45C; }
+  .ev-top h3 { margin:10px 0 8px; font-size:25px; line-height:1.3; font-weight:900; letter-spacing:-.02em; }
+  .ev-top h3 em { font-style:normal; color:#E3C27E; }
+  .ev-top p { margin:0; font-size:13.5px; line-height:1.6; color:#CFD8D0; }
+  .ev-body { padding:6px 24px 4px; }
+  .ev-row { display:flex; align-items:baseline; justify-content:space-between; padding:16px 0; border-bottom:1px solid #E6DFCF; }
+  .ev-row b { font-size:17px; font-weight:800; color:#1B1B1B; }
+  .ev-row b small { display:block; font-size:12px; font-weight:600; color:#8B8371; margin-top:3px; }
+  .ev-row .pr { text-align:right; white-space:nowrap; font-size:13px; color:#8B8371; font-weight:600; }
+  .ev-row .pr strong { font-size:24px; font-weight:900; color:#17352A; letter-spacing:-.02em; margin-left:4px; }
+  .ev-chips { display:flex; flex-wrap:wrap; gap:6px; padding:14px 0 2px; }
+  .ev-chips span { font-size:12px; font-weight:700; color:#17352A; border:1px solid #C9BFA6; border-radius:99px; padding:5px 10px; background:#fff; }
+  .ev-note { margin:12px 0 0; font-size:12px; line-height:1.6; color:#8B8371; }
+  .ev-foot { padding:16px 24px calc(18px + env(safe-area-inset-bottom)); }
+  .ev-foot .go { width:100%; border:0; border-radius:12px; padding:16px; font-size:16px; font-weight:900; background:#17352A; color:#F4EEDD; font-family:inherit; }
+  .ev-foot .later { display:block; margin:12px auto 0; border:0; background:none; color:#8B8371; font-size:13px; text-decoration:underline; font-family:inherit; }
   label.agree { display:flex; gap:10px; align-items:flex-start; margin:4px 0 0; font-size:14px; font-weight:700; cursor:pointer; }
   label.agree input { width:22px; height:22px; flex:none; margin:1px 0 0; accent-color:var(--g); }
   label.agree small { display:block; font-weight:500; color:#888; font-size:12px; margin-top:2px; }
@@ -295,6 +317,8 @@ const CAP_OVR = { b08: "0.5cm 두께<br>약 500g (±10g)" }; // 사진별 문구
 const capOf = (id) => CAP_OVR[id] || CAP_TXT;
 const PHOTOS = ["b29","b27","b21","b08","b01","b04","b12","b13","b03","b06","b11","b19","b09","p01","p02","p03","p12","p13"];
 const PRODUCTS = [
+  { id:"b39", group:"한우 1등급 · 노마진 이벤트 (이번 경매 물량 한정)", name:"1등급 명품등심", price:0, per100:9900, geun:59400 },
+  { id:"b40", group:"한우 1등급 · 노마진 이벤트 (이번 경매 물량 한정)", name:"1등급 채끝등심", price:0, per100:9900, geun:59400 },
   { id:"b08", group:"한우 1+/1++ · 구이용", name:"한우 모듬구이 (업진살·부채살·아롱구이)", price:0, per100:13500, geun:81000 },
   { id:"b01", group:"한우 1+/1++ · 구이용", name:"살치살", price:0, per100:15500, geun:93000 },
   { id:"b04", group:"한우 1+/1++ · 구이용", name:"갈비살", price:0, per100:14500, geun:87000 },
@@ -352,6 +376,7 @@ const PRODUCTS = [
   { id:"u02", group:"LA갈비 · 미국산", name:"LA갈비 탕용", price:0, per100:4800, geun:28800 },
 ];
 const GROUP_NOTE = {
+  "한우 1등급 · 노마진 이벤트 (이번 경매 물량 한정)": "300g부터 주문 · 물량이 소진되면 조기 마감돼요 · 11월 감사 서비스와 중복 적용되지 않아요.",
   "한우 1+/1++ · 구이용": "등급은 그날 들어온 소에 따라 1+ 또는 1++. 스테이크, 구이용 원하시는 두께는 요청사항에 적어주세요.",
   "한우 1+/1++ · 육회·육사시미": "기본 소스가 함께 제공돼요. 픽업 당일 손질해요. 받으신 날 바로 드세요 (냉장 보관).",
   "한우 1+/1++ · 갈비": "갈비는 600g 단위예요.",
@@ -365,6 +390,7 @@ const UNIT = {
   b25: { step:1500, label:(n)=>`${n}병`, sub:(n)=>`${(n*1.5).toLocaleString("ko-KR")}L`, bottle:true },
   b18: { step:1500, label:(n)=>`${n}세트`, sub:(n)=>`육수 ${(n*1.5).toLocaleString("ko-KR")}L + 고기 ${n*150}g`, bottle:true },
   b37: { step:1, label:(n)=>`${n}개`, sub:()=>"추가 소스", bottle:true }, b38: { step:1, label:(n)=>`${n}개`, sub:()=>"추가 소스", bottle:true },
+  b39: { min:2 }, b40: { min:2 }, // 1등급 이벤트: 최소 300g
   b08: { min:2 }, p04: { min:2 }, // 모듬: 최소 300g, 이후 150g씩
   b21: { step:600 }, b22: { step:600 }, p15: { step:600 }, p16: { step:600 }, u01: { step:600 }, u02: { step:600 },
 };
@@ -574,8 +600,29 @@ document.addEventListener("click", async (e) => {
 $("#way").addEventListener("click", e => { const b = e.target.closest("button"); if (!b || b.dataset.w === way) return; way = b.dataset.w; $("#f-unit").value = ""; drawWay(); render(); });
 setInterval(render, 30000);
 /* 메뉴판 반영: 처음 열 때 + 화면으로 돌아올 때(1분 이상 지났으면) */
-const syncCatalog = () => { loadCatalog(ok => { if (!ok) return; PRODUCTS.forEach(p => { if (p.status === "품절") delete qty[p.id]; }); render(); loadPhotos(); });
+const syncCatalog = () => { loadCatalog(ok => { if (!ok) return; PRODUCTS.forEach(p => { if (p.status === "품절") delete qty[p.id]; }); render(); loadPhotos(); showEvent(); });
   gviz("&sheet=Settings", rows => { const r = rows && rows.find(x => String(x[0]).trim() === "notice"); if (r) applyNotice(r[1]); const sh = rows && rows.find(x => String(x[0]).trim() === "ship"); applyShip(sh ? sh[1] : ""); }); };
+/* ── 노마진 이벤트 팝업: 이벤트 고기(b39·b40)가 하나라도 판매 중일 때만, 하루에 한 번 ── */
+const EVENT_IDS = ["b39", "b40"];
+function showEvent() {
+  const live = PRODUCTS.filter(p => EVENT_IDS.includes(p.id) && p.status !== "품절"); if (!live.length || document.querySelector(".ev-back")) return;
+  try { if (localStorage.getItem("cj_ev_hide") === ds(kst()) || sessionStorage.getItem("cj_ev_seen")) return; sessionStorage.setItem("cj_ev_seen", "1"); } catch (e) {}
+  const d = document.createElement("div"); d.className = "ev-back";
+  d.innerHTML = `<div class="ev" role="dialog" aria-label="한우 1등급 노마진 이벤트">
+    <div class="ev-top"><button class="x" data-ev="close" aria-label="닫기">✕</button>
+      <div class="kick">LIMITED · 이번 경매 물량 한정</div>
+      <h3>한우 1등급<br><em>노마진</em> 이벤트</h3>
+      <p>원물이 좋아 1등급으로 받아왔어요.<br>이번에 들어온 소만 마진 없이 드립니다.</p></div>
+    <div class="ev-body">
+      ${live.map(p => `<div class="ev-row"><b>${p.name}<small>한우 1등급 · 구이용</small></b><span class="pr">100g<strong>${won(p.per100)}</strong></span></div>`).join("")}
+      <div class="ev-chips"><span>300g부터 · ${won(live[0].price * 2)}</span><span>한정 수량</span><span>소진 시 조기 마감</span></div>
+      <p class="ev-note">노마진 상품이라 11월 감사 서비스와 중복 적용되지 않아요.</p></div>
+    <div class="ev-foot"><button class="go" data-ev="go">이벤트 고기 담으러 가기</button><button class="later" data-ev="hide">오늘은 그만 보기</button></div></div>`;
+  d.addEventListener("click", e => { const a = e.target.closest("[data-ev]"), act = a ? a.dataset.ev : (e.target === d ? "close" : ""); if (!act) return;
+    if (act === "hide") { try { localStorage.setItem("cj_ev_hide", ds(kst())); } catch (x) {} }
+    d.remove(); if (act === "go") { const el = document.querySelector(`.plus[data-id="${live[0].id}"]`); if (el) el.closest(".item").previousElementSibling.scrollIntoView({ behavior:"smooth", block:"start" }); } });
+  document.body.appendChild(d);
+}
 document.querySelectorAll(".acctbox").forEach(el => el.innerHTML = acctHtml());
 syncCatalog();
 document.addEventListener("visibilitychange", () => { if (!document.hidden && Date.now() - CATALOG_AT > 60000) syncCatalog(); });
