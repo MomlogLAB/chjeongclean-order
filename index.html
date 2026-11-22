@@ -625,16 +625,14 @@ function showEvent() {
     d.remove(); if (act === "go") { const el = document.querySelector(`.plus[data-id="${live[0].id}"]`); if (el) el.closest(".item").previousElementSibling.scrollIntoView({ behavior:"smooth", block:"start" }); } });
   document.body.appendChild(d);
 }
-/* ── 방문 수 세기: 무료 카운터(abacus)에 날짜별로 +1. 개인정보는 보내지 않고, 실패해도 주문 화면에는 영향 없음.
-      v-날짜 = 열어본 횟수(접속할 때마다), u-날짜 = 방문자 수(같은 기기는 하루 1번). 관리자 탭에 들어간 기기는 세지 않음 ── */
-const CNT = "https://abacus.jasoncameron.dev", CNT_NS = "chjeongclean-sadadeurim";
+/* ── 방문 수 세기: 같은 기기는 하루 1번만, 주문 DB 시트의 '방문기록' 탭에 한 줄 추가 (날짜·시각·처음/재방문만, 개인정보 없음).
+      관리자 탭에 로그인한 기기는 세지 않음. 실패해도 주문 화면에는 영향 없음 ── */
 function countVisit() {
   try {
-    if (!/^https?:/.test(location.protocol) || localStorage.getItem("cj_me") || sessionStorage.getItem("cj_cnt")) return;
-    sessionStorage.setItem("cj_cnt", "1");
-    const day = ds(kst()), hit = (k) => fetch(`${CNT}/hit/${CNT_NS}/${k}`, { keepalive:true }).catch(() => {});
-    hit("v-" + day);
-    if (localStorage.getItem("cj_cnt_day") !== day) { localStorage.setItem("cj_cnt_day", day); hit("u-" + day); }
+    if (!/^https?:/.test(location.protocol) || localStorage.getItem("cj_me")) return;
+    const day = ds(kst()); if (localStorage.getItem("cj_cnt_day") === day) return;
+    const kind = localStorage.getItem("cj_cnt_day") ? "back" : "new"; localStorage.setItem("cj_cnt_day", day);
+    fetch(CONFIG.hook.adminList, { method:"POST", headers:{ "Content-Type":"application/json" }, body: JSON.stringify({ action:"visit", kind }), keepalive:true }).catch(() => {});
   } catch (e) {}
 }
 countVisit();
@@ -918,17 +916,18 @@ function renderStats() {
     + S.rows.map((r, i) => `<tr class="${r.batch === cur ? "cur" : ""}"><td>${i + 1}회 ${Number(r.batch.slice(5, 7))}/${Number(r.batch.slice(8))}(${"일월화수목금토"[new Date(r.batch + "T00:00:00").getDay()]})</td><td>${r.homes}</td><td>${r.re}</td><td>${r.fresh}</td><td class="rate">${i ? Math.round(r.re / r.homes * 100) + "%" : "-"}</td></tr>`).join("")
     + `</table><p class="note" style="margin:8px 0 0">재주문율 = 그 회차 주문 세대 중 이전 회차에도 주문한 세대 비율 (전화번호 기준, 입금 전 주문 포함).</p>`;
 }
-/* ── 방문 현황: 최근 10일의 날짜별 방문자 수·열어본 횟수 ── */
+/* ── 방문 현황: 날짜별 방문자(기기) 수. 주문 DB 시트 '방문현황' 탭에서 읽어 옴 ── */
 async function loadVisits() {
   const el = $("#a-visit"); el.classList.remove("hidden"); el.innerHTML = `<h3>방문 현황</h3><p class="note" style="margin:0">불러오는 중…</p>`;
-  const days = []; for (let i = 0; i < 10; i++) { const d = kst(); d.setDate(d.getDate() - i); days.push(ds(d)); }
-  const get = async (k) => { try { const r = await fetch(`${CNT}/get/${CNT_NS}/${k}`); if (r.status === 404) return 0; if (!r.ok) return null; const j = await r.json(); return Number(j.value) || 0; } catch (e) { return null; } };
-  const rows = []; for (const d of days) rows.push({ d, u: await get("u-" + d), v: await get("v-" + d) });
-  if (rows.every(r => r.u === null && r.v === null)) { el.innerHTML = `<h3>방문 현황</h3><p class="note" style="margin:0">방문 수를 불러오지 못했어요. 잠시 뒤 [불러오기]를 다시 눌러 주세요.</p>`; return; }
-  const f = (n) => n === null ? "?" : n.toLocaleString("ko-KR");
-  el.innerHTML = `<h3>방문 현황</h3><div class="big">오늘 방문자 <b>${f(rows[0].u)}명</b><br><small style="font-weight:500;color:#666">오늘 열어본 횟수 ${f(rows[0].v)}회</small></div>
-    <table><tr><th>날짜</th><th>방문자</th><th>열어본 횟수</th></tr>` + rows.map((r, i) => `<tr class="${i ? "" : "cur"}"><td>${dayLabel(r.d)}</td><td>${f(r.u)}</td><td>${f(r.v)}</td></tr>`).join("")
-    + `</table><p class="note" style="margin:8px 0 0">방문자 = 그날 처음 들어온 기기 수, 열어본 횟수 = 접속할 때마다 1회. 관리자 탭에 로그인한 기기는 세지 않아요.</p>`;
+  let rows = null;
+  try { const c = new AbortController(), t = setTimeout(() => c.abort(), 15000);
+    const r = await fetch(CONFIG.hook.adminList, { method:"POST", headers:{ "Content-Type":"application/json" }, body: JSON.stringify({ pin: PIN, action:"visits" }), signal: c.signal }); clearTimeout(t);
+    const j = await r.json(); if (Array.isArray(j)) rows = j.filter(x => Array.isArray(x) && x[0]).map(x => ({ d: String(x[0]), u: Number(x[1]) || 0, n: Number(x[2]) || 0, b: Number(x[3]) || 0 })); } catch (e) {}
+  if (!rows) { el.innerHTML = `<h3>방문 현황</h3><p class="note" style="margin:0">방문 수를 불러오지 못했어요. 잠시 뒤 [불러오기]를 다시 눌러 주세요.</p>`; return; }
+  const today = ds(kst()), t0 = rows.find(r => r.d === today) || { u:0, n:0, b:0 }, f = (n) => n.toLocaleString("ko-KR");
+  el.innerHTML = `<h3>방문 현황</h3><div class="big">오늘 방문자 <b>${f(t0.u)}명</b><br><small style="font-weight:500;color:#666">처음 온 기기 ${f(t0.n)} · 다시 온 기기 ${f(t0.b)}</small></div>`
+    + (rows.length ? `<table><tr><th>날짜</th><th>방문자</th><th>처음</th><th>재방문</th></tr>` + rows.map(r => `<tr class="${r.d === today ? "cur" : ""}"><td>${dayLabel(r.d)}</td><td>${f(r.u)}</td><td>${f(r.n)}</td><td>${f(r.b)}</td></tr>`).join("") + `</table>` : `<p class="note" style="margin:10px 0 0">아직 기록된 방문이 없어요. 오늘부터 쌓여요.</p>`)
+    + `<p class="note" style="margin:8px 0 0">방문자 = 그날 들어온 기기 수 (같은 기기는 하루 1번). 관리자 탭에 로그인한 기기는 세지 않아요. 최근 14일까지 보여요.</p>`;
 }
 $("#a-load").addEventListener("click", () => { if (PIN) loadVisits(); });
 $("#a-re").addEventListener("click", e => { const b = e.target.closest("[data-off]"); if (!b) return;
