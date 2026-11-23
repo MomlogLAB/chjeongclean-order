@@ -158,8 +158,8 @@ function render() {
   $("#prog").textContent = `등록 ${ROWS.filter(r => done.includes(r.id)).length} / ${ROWS.length}개`;
   $("#list").innerHTML = list.length ? list.map(r => (r.group !== g ? (g = r.group, `<div class="gh">${esc(r.group)}</div>`) : "") + `
     <div class="card ${done.includes(r.id) ? "done" : ""}">
-      <div class="top">${r.photo ? `<a href="img/${r.id}.jpg" target="_blank"><img src="img/${r.id}.jpg" alt=""></a>` : ""}
-        <div class="t"><b>${esc(r.name)}</b><small>${r.status.includes("품절") ? "지금 사다드림에서 품절 · " : ""}${r.photo ? "사진을 눌러 크게 본 뒤 길게 눌러 저장" : r.hasUp ? "사진은 사장님 페이지에 올린 것을 사용" : "사진 없음 · 직접 찍어서 올려주세요"}</small></div>
+      <div class="top"><a href="${r.photo ? `img/${r.id}.jpg` : `store/tmp/${r.id}.png`}" target="_blank"><img src="${r.photo ? `img/${r.id}.jpg` : `store/tmp/${r.id}.png`}" alt="" onerror="this.parentNode.style.display='none'"></a>
+        <div class="t"><b>${esc(r.name)}</b><small>${r.status.includes("품절") ? "지금 사다드림에서 품절 · " : ""}${r.photo ? "사진을 눌러 크게 본 뒤 길게 눌러 저장" : "임시 이미지 · 눌러서 저장 (실제 사진을 찍으면 바꿔주세요)"}</small></div>
         <label><input type="checkbox" data-done="${r.id}" ${done.includes(r.id) ? "checked" : ""}>등록함</label></div>
       <div class="f"><div class="k">상품명 <button class="cp" data-cp="${esc(r.title)}">복사</button></div><div class="v big">${esc(r.title)}</div></div>
       <div class="f grid">
