@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>스마트스토어 등록 도우미</title>
+<meta name="robots" content="noindex">
+<meta name="theme-color" content="#1F6B4E">
+<style>
+  :root { --g:#1F6B4E; --r:#D6402B; --mint:#EEF6F1; --ink:#1C2B24; --grey:#5B6B63; --line:#E3ECE7; --bg:#F4F7F5; }
+  * { box-sizing:border-box; }
+  body { margin:0; background:var(--bg); color:var(--ink); font-family:'Noto Sans KR','Apple SD Gothic Neo',system-ui,sans-serif; -webkit-font-smoothing:antialiased; }
+  .wrap { max-width:560px; margin:0 auto; padding:0 12px 80px; }
+  header { padding:22px 4px 8px; } header .logo { display:inline-block; background:var(--g); color:#fff; font-weight:900; font-size:13px; padding:4px 9px; border-radius:6px; }
+  header h1 { font-size:22px; margin:10px 0 4px; } header p { margin:0; color:var(--grey); font-size:14px; line-height:1.55; }
+  .box { background:#fff; border-radius:16px; padding:16px; margin-top:12px; box-shadow:0 1px 3px rgba(0,0,0,.05); }
+  .box h2 { font-size:16px; margin:0 0 8px; font-weight:900; } .box ol { margin:0; padding-left:20px; font-size:14px; line-height:1.7; color:#33423B; }
+  .imgs { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:10px; } .imgs a { display:block; text-decoration:none; color:var(--ink); font-size:13px; font-weight:800; text-align:center; }
+  .imgs img { width:100%; height:150px; object-fit:cover; object-position:top; border-radius:10px; border:1px solid var(--line); display:block; margin-bottom:5px; }
+  .tools { position:sticky; top:0; z-index:5; background:var(--bg); padding:12px 0 8px; display:flex; gap:8px; }
+  .tools input { flex:1; border:1px solid var(--line); border-radius:12px; padding:11px 12px; font-size:15px; font-family:inherit; outline:none; }
+  .tools button { border:1px solid var(--line); background:#fff; border-radius:12px; padding:0 12px; font-size:13px; font-weight:800; color:var(--grey); font-family:inherit; white-space:nowrap; }
+  .tools button.on { background:var(--g); color:#fff; border-color:var(--g); }
+  .prog { font-size:13px; color:var(--grey); margin:0 4px 6px; font-weight:700; }
+  .gh { margin:18px 4px 6px; font-size:14px; font-weight:900; color:var(--g); }
+  .card { background:#fff; border-radius:16px; padding:14px; margin-top:10px; box-shadow:0 1px 3px rgba(0,0,0,.05); }
+  .card.done { opacity:.55; }
+  .top { display:flex; gap:10px; align-items:flex-start; } .top img { width:64px; height:64px; border-radius:10px; object-fit:cover; flex:none; }
+  .top .t { flex:1; min-width:0; } .top .t b { font-size:16px; display:block; } .top .t small { color:var(--grey); font-size:12px; }
+  .top label { flex:none; font-size:12px; font-weight:800; color:var(--grey); display:flex; flex-direction:column; align-items:center; gap:3px; } .top label input { width:24px; height:24px; accent-color:var(--g); }
+  .f { margin-top:10px; border-top:1px solid var(--line); padding-top:10px; } .f .k { font-size:12px; color:var(--grey); font-weight:800; display:flex; justify-content:space-between; align-items:center; }
+  .f .v { font-size:15px; margin-top:4px; white-space:pre-wrap; line-height:1.6; word-break:keep-all; }
+  .f .v.big { font-weight:900; font-size:17px; }
+  .cp { border:0; background:var(--mint); color:var(--g); font-weight:900; font-size:12px; border-radius:8px; padding:6px 10px; font-family:inherit; }
+  .grid { display:grid; grid-template-columns:1fr 1fr; gap:8px 12px; } .grid .f { margin-top:0; }
+  .warn { color:var(--r); font-size:12px; font-weight:700; margin-top:6px; }
+  #toast { position:fixed; left:50%; bottom:24px; transform:translateX(-50%); background:#1C2B24; color:#fff; padding:10px 16px; border-radius:99px; font-size:14px; font-weight:700; opacity:0; transition:opacity .2s; pointer-events:none; }
+  #toast.on { opacity:1; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header><span class="logo">청정한우</span><h1>스마트스토어 등록 도우미</h1>
+    <p>사다드림 메뉴판의 가격을 그대로 불러와서, 스마트스토어 상품 등록에 넣을 내용을 상품별로 정리했어요. <b>복사</b>를 눌러 스마트스토어센터에 붙여넣으세요.</p></header>
+
+  <div class="box"><h2>등록 순서</h2><ol>
+    <li>아래 <b>공통 상세 이미지 4장</b>을 폰에 저장 (길게 눌러 저장)</li>
+    <li>스마트스토어센터 → 상품등록 → 카테고리 선택</li>
+    <li>상품명·판매가 복사해서 넣기, 재고 수량 입력</li>
+    <li>대표 이미지에 고기 사진 올리기</li>
+    <li>상세설명에 <b>상세 설명 글</b>을 붙여넣고, 그 아래 공통 이미지 4장을 순서대로 넣기</li>
+    <li>최소 구매 수량, 원산지, 상품정보제공고시 입력 후 저장 → 이 화면에서 <b>등록함</b> 체크</li></ol></div>
+
+  <div class="box"><h2>공통 상세 이미지 (모든 상품에 똑같이)</h2>
+    <div class="imgs">
+      <a href="store/intro.png" target="_blank"><img src="store/intro.png" alt="가게 소개">① 가게 소개</a>
+      <a href="store/delivery.png" target="_blank"><img src="store/delivery.png" alt="배송 안내">② 주문·배송</a>
+      <a href="store/care.png" target="_blank"><img src="store/care.png" alt="보관과 굽는 법">③ 보관·굽는 법</a>
+      <a href="store/refund.png" target="_blank"><img src="store/refund.png" alt="교환 환불">④ 교환·환불</a>
+    </div></div>
+
+  <div class="tools"><input id="q" placeholder="🔍 상품 이름으로 찾기"><button id="only">미등록만</button></div>
+  <div class="prog" id="prog"></div>
+  <div id="list"><div class="box">메뉴판을 불러오는 중…</div></div>
+</div>
+<div id="toast"></div>
+<script>
+const SHEET = "1kiq6_gzYEv5H2StF-aNZvbgISLvsvQb72BPZRmd0DtQ";
+const STEP = { b09:240, b25:1500, b18:1500, b21:600, b22:600, p15:600, p16:600, u01:600, u02:600 }, MIN = { b39:2, b40:2, b08:2, p04:2 };
+const PHOTOS = ["b29","b27","b21","b08","b01","b04","b12","b13","b03","b06","b11","b19","b09","p01","p02","p03","p12","p13"];
+const UNITTXT = { b09:"2팩 (한 팩 120g)", b25:"1.5L 1병", b26:"150g 1개", b18:"1세트 (육수 1.5L + 삶은고기 150g)", b37:"1개", b38:"1개" };
+/* 상품별 설명: [한 줄 소개, 추천 요리] */
+const D = {
+  b39:["등심 특유의 고소한 풍미가 살아 있는 한우 1등급 등심이에요. 1+/1++보다 기름이 적어 담백합니다.","구이, 스테이크"],
+  b40:["부드러운 살코기와 적당한 지방이 어우러진 한우 1등급 채끝이에요. 기름기가 부담스러운 분께 잘 맞습니다.","스테이크, 구이"],
+  b08:["업진살·부채살·아롱구이 세 가지를 한 번에 맛볼 수 있는 모듬 구이예요. 부위마다 다른 식감을 즐기실 수 있어요.","구이"],
+  b01:["등심 앞쪽에서 소량만 나오는 부위로, 촘촘한 마블링과 부드러운 식감이 특징이에요.","구이"],
+  b04:["갈비뼈 사이의 살로, 씹을수록 진한 육향과 육즙이 올라오는 구이 부위예요.","구이"],
+  b34:["지방과 살코기가 층을 이룬 부위로, 고소한 맛이 진해요.","구이, 불판 구이"],
+  b35:["쫄깃한 식감과 담백한 맛이 좋은 구이 부위예요.","구이"],
+  b36:["결이 굵고 육즙이 풍부해 씹는 맛이 좋은 부위예요.","구이"],
+  b12:["소 한 마리에서 소량만 나오는 특수부위로, 육향이 진하고 식감이 부드러워요.","구이"],
+  b27:["소량만 나오는 특수부위로, 진한 육향과 쫄깃한 식감이 특징이에요.","구이"],
+  b29:["얇게 썰어 살짝만 익혀 드시는 고소한 부위예요.","구이, 된장찌개, 숙주볶음"],
+  b28:["소고기에서 가장 부드러운 부위로, 지방이 적고 결이 고와요.","스테이크, 구이"],
+  b13:["소 한 마리에서 소량만 나오는 특수부위로, 담백하면서 육향이 진해요.","구이"],
+  b03:["등심의 새우살과 꽃등심을 함께 담았어요. 마블링이 풍부하고 풍미가 진합니다.","구이, 스테이크"],
+  b06:["부드러운 살코기와 고소한 지방이 어우러진 등심 끝 부위예요.","스테이크, 구이"],
+  b23:["지방이 적고 담백한 우둔살로 준비한 육회용 고기예요. 기본 소스가 함께 나가요.","육회"],
+  b30:["부드럽고 차진 식감의 꾸리살로 준비한 육회용 고기예요. 기본 소스가 함께 나가요.","육회"],
+  b24:["담백한 우둔살을 썰어 낸 육사시미예요. 기본 소스가 함께 나가요.","육사시미"],
+  b31:["차진 식감의 꾸리살을 썰어 낸 육사시미예요. 기본 소스가 함께 나가요.","육사시미"],
+  b37:["육회·육사시미에 곁들이는 간장 소스예요. 기본 소스 외에 더 필요하실 때 추가해 주세요.","육회, 육사시미"],
+  b38:["육회·육사시미에 곁들이는 고추장 소스예요. 기본 소스 외에 더 필요하실 때 추가해 주세요.","육회, 육사시미"],
+  b11:["얇게 썬 한우 불고기감이에요. 양념하지 않은 고기이며 냉동 상태로 나갑니다.","불고기, 전골, 샤브샤브"],
+  b14:["한우를 곱게 간 다짐육이에요.","볶음밥, 미역국, 동그랑땡, 이유식"],
+  b15:["칼로 직접 다져 씹는 맛이 살아 있는 다짐육이에요.","떡갈비, 함박스테이크, 육전"],
+  b16:["지방이 적고 담백한 우둔살을 이유식용으로 준비했어요. 다짐·소분 요청은 배송 메모에 적어주세요.","이유식"],
+  b02:["가장 부드러운 안심을 이유식용으로 준비했어요. 다짐·소분 요청은 배송 메모에 적어주세요.","이유식"],
+  b25:["한우 사골을 우려낸 육수 1.5L예요.","떡국, 국밥, 찌개 육수"],
+  b26:["사골을 우릴 때 함께 삶은 고기 150g이에요.","수육, 국밥 고명"],
+  b18:["사골육수 1.5L와 삶은고기 150g을 함께 담은 세트예요.","곰탕, 떡국"],
+  b19:["국물 맛이 깊게 우러나는 양지를 덩어리째 보내드려요.","수육, 장조림, 육개장"],
+  b32:["국물용으로 먹기 좋게 토막 썬 양지예요.","미역국, 무국, 육개장"],
+  b20:["오래 끓이면 쫀득해지는 사태를 덩어리째 보내드려요.","수육, 장조림, 찜"],
+  b33:["국·찌개용으로 토막 썬 사태예요.","국, 찌개, 카레"],
+  b09:["한 번 끓일 분량씩 소분한 국거리 팩이에요. 한 팩 120g입니다.","미역국, 무국, 된장찌개"],
+  b21:["찜용으로 손질한 한우 갈비예요. 600g 단위로 주문해 주세요.","갈비찜"],
+  b22:["탕용으로 손질한 한우 갈비예요. 600g 단위로 주문해 주세요.","갈비탕"],
+  p01:["살코기와 지방이 고르게 층을 이룬 한돈 삼겹살이에요. 두께 요청은 배송 메모에 적어주세요.","구이, 수육"],
+  p02:["껍데기까지 붙어 있어 쫄깃한 제주산 오겹살이에요.","구이"],
+  p11:["칼집을 촘촘히 넣어 속까지 고르게 익는 삼겹살이에요.","구이"],
+  p03:["살코기와 지방의 균형이 좋은 한돈 목살이에요.","구이, 수육, 김치찌개"],
+  p12:["아삭하게 씹히는 식감과 고소한 맛이 특징인 특수부위예요.","구이"],
+  p13:["등심 위쪽에서 소량만 나오는 부위로, 부드럽고 고소해요.","구이"],
+  p23:["쫄깃한 식감과 진한 풍미가 특징인 특수부위예요.","구이"],
+  p05:["지방이 적고 담백한 한돈 앞다리살이에요.","수육, 제육볶음, 찌개"],
+  p24:["담백한 제주산 앞다리살이에요.","수육, 제육볶음, 찌개"],
+  p04:["항정살·가브리살·갈매기살을 한 번에 맛보는 한돈 특수부위 모듬이에요. 갈매기살이 소진되면 항정살 또는 가브리살로 대체됩니다.","구이"],
+  p14:["제육볶음·돼지 불고기용으로 썬 앞다리살이에요. 양념하지 않은 생고기이며 두께 조절이 가능해요.","제육볶음, 돼지 불고기"],
+  p22:["제육볶음·돼지 불고기용으로 썬 목살이에요. 양념하지 않은 생고기이며 두께 조절이 가능해요.","제육볶음, 돼지 불고기"],
+  p20:["지방이 거의 없는 부드러운 한돈 안심이에요.","장조림, 탕수육, 카레"],
+  p21:["담백한 한돈 등심이에요.","돈까스, 탕수육, 구이"],
+  p15:["양념용으로 손질한 돼지갈비예요. 양념하지 않은 생고기이며 600g 단위로 주문해 주세요.","돼지갈비 구이, 갈비찜"],
+  p16:["뼈에 살이 넉넉히 붙은 등갈비예요. 600g 단위로 주문해 주세요.","등갈비 구이, 김치찜"],
+  p17:["돈까스용으로 손질한 한돈 등심이에요.","돈까스"],
+  p18:["돈까스용으로 손질한 한돈 안심이에요.","안심 돈까스"],
+  p19:["찌개용으로 썬 한돈 앞다리살이에요.","김치찌개, 된장찌개"],
+  u01:["찜용으로 손질한 미국산 LA갈비예요. 양념하지 않은 고기이며 600g 단위로 주문해 주세요.","LA갈비 찜"],
+  u02:["탕용으로 손질한 미국산 LA갈비예요. 600g 단위로 주문해 주세요.","갈비탕"],
+};
+const $ = (s) => document.querySelector(s), won = (n) => Number(n).toLocaleString("ko-KR") + "원", esc = (t) => String(t).replace(/[&<>"]/g, c => ({ "&":"&amp;", "<":"&lt;", ">":"&gt;", '"':"&quot;" }[c]));
+const LS = { get() { try { return JSON.parse(localStorage.getItem("cj_ss_done") || "[]"); } catch (e) { return []; } }, set(v) { try { localStorage.setItem("cj_ss_done", JSON.stringify(v)); } catch (e) {} } };
+function toast(t) { const el = $("#toast"); el.textContent = t; el.classList.add("on"); clearTimeout(toast.t); toast.t = setTimeout(() => el.classList.remove("on"), 1500); }
+function gviz() { return new Promise((res, rej) => { const fn = "__gv" + Date.now(), sc = document.createElement("script"); const tm = setTimeout(() => rej(new Error("timeout")), 12000);
+  window[fn] = (r) => { clearTimeout(tm); sc.remove(); (!r || r.status !== "ok") ? rej(new Error("bad")) : res(r.table.rows.map(row => (row.c || []).map(x => (x && x.v != null) ? x.v : ""))); };
+  sc.onerror = () => rej(new Error("load")); sc.src = `https://docs.google.com/spreadsheets/d/${SHEET}/gviz/tq?tqx=out:json;responseHandler:${fn};reqId:${Date.now() % 100000}&headers=1`; document.head.appendChild(sc); }); }
+let ROWS = [], ONLY = false;
+function build(c) {
+  const id = String(c[0]).trim(), group = String(c[1]), raw = String(c[2]), geun = Number(c[4]) || 0, flat = Number(c[5]) || 0, step = STEP[id] || (geun ? 150 : 1), min = MIN[id] || 1;
+  const price = geun ? Math.round(geun * step / 600) : flat, name = raw.replace(/\s*\(한정수량\)/, "");
+  const kind = group.includes("1등급") ? "한우 1등급" : group.startsWith("한우") ? "한우 1+/1++" : group.startsWith("한돈") ? "한돈" : "미국산";
+  const unit = UNITTXT[id] || (geun ? `${step}g` : "1개");
+  const sauce = /소스/.test(name), bone = /사골육수|삶은고기/.test(name), core = name.replace(/^1등급 /, "").replace(/^(한우|한돈) /, "");
+  const tail = geun ? ` ${step}g` : id === "b09" ? " 2팩" : id === "b18" ? " 세트" : "";
+  const title = (sauce ? `청정한우 ${core.replace("육회, 육사시미", "육회·육사시미")}` : bone ? `청정한우 한우 ${core}${tail}` : `청정한우 ${kind === "미국산" ? "미국산" : kind} ${core}${tail}`).replace(/\s+/g, " ").trim();
+  const origin = kind === "미국산" ? "미국산" : /소스/.test(name) ? "재료별 원산지 확인 후 입력" : "국내산";
+  const cat = /소스/.test(name) ? "식품 > 소스/드레싱 (가까운 항목)" : /사골육수/.test(name) ? "식품 > 축산물 또는 국/탕 (가까운 항목)" : kind === "미국산" ? "식품 > 축산물 > 수입 쇠고기" : kind === "한돈" ? "식품 > 축산물 > 국내산 돼지고기" : "식품 > 축산물 > 한우";
+  const d = D[id] || [String(c[7] || "청정한우에서 그날 손질해 보내드리는 상품이에요."), ""];
+  const grade = bone ? "한우 (국내산)" : kind === "한우 1+/1++" ? "한우 1+/1++ (그날 들어온 소에 따라 1+ 또는 1++)" : kind === "한우 1등급" ? "한우 1등급" : kind === "한돈" ? "한돈 (국내산 돼지고기)" : "미국산 쇠고기";
+  const lines = [`[청정한우] ${name}`, d[0], "", `· 중량: ${unit}` + (geun ? ` (수량으로 조절해 주세요. 예: ${step * 2}g = 2개)` : ""), /소스/.test(name) ? null : `· 구분: ${grade}`, d[1] ? `· 추천 요리: ${d[1]}` : null,
+    min > 1 ? `· 최소 주문: ${min}개 (${step * min}g)부터` : null, /소스|사골육수|삶은고기/.test(name) ? null : "· 손질: 두께·썰기·소분 포장 요청은 배송 메모에 적어주세요.", "· 배송: 디에이치 방배 입주민 전용 · 화/금 오후 4:30~5:30 주문하신 동 무인택배함"].filter(x => x !== null);
+  return { id, group, name, title, price, unit, min, step, geun, origin, cat, status: String(c[6] || ""), detail: lines.join("\n"), photo: PHOTOS.includes(id), hasUp: !!String(c[8] || "").trim() };
+}
+function render() {
+  const done = LS.get(), q = $("#q").value.trim(); let g = "";
+  const list = ROWS.filter(r => (!q || r.name.includes(q)) && (!ONLY || !done.includes(r.id)));
+  $("#prog").textContent = `등록 ${ROWS.filter(r => done.includes(r.id)).length} / ${ROWS.length}개`;
+  $("#list").innerHTML = list.length ? list.map(r => (r.group !== g ? (g = r.group, `<div class="gh">${esc(r.group)}</div>`) : "") + `
+    <div class="card ${done.includes(r.id) ? "done" : ""}">
+      <div class="top">${r.photo ? `<a href="img/${r.id}.jpg" target="_blank"><img src="img/${r.id}.jpg" alt=""></a>` : ""}
+        <div class="t"><b>${esc(r.name)}</b><small>${r.status.includes("품절") ? "지금 사다드림에서 품절 · " : ""}${r.photo ? "사진을 눌러 크게 본 뒤 길게 눌러 저장" : r.hasUp ? "사진은 사장님 페이지에 올린 것을 사용" : "사진 없음 · 직접 찍어서 올려주세요"}</small></div>
+        <label><input type="checkbox" data-done="${r.id}" ${done.includes(r.id) ? "checked" : ""}>등록함</label></div>
+      <div class="f"><div class="k">상품명 <button class="cp" data-cp="${esc(r.title)}">복사</button></div><div class="v big">${esc(r.title)}</div></div>
+      <div class="f grid">
+        <div class="f"><div class="k">판매가 (${esc(r.unit)}) <button class="cp" data-cp="${r.price}">복사</button></div><div class="v big">${won(r.price)}</div></div>
+        <div class="f"><div class="k">최소 구매 수량</div><div class="v big">${r.min}개${r.min > 1 ? ` (${r.step * r.min}g)` : ""}</div></div>
+        <div class="f"><div class="k">카테고리</div><div class="v" style="font-size:13px">${esc(r.cat)}</div></div>
+        <div class="f"><div class="k">원산지</div><div class="v" style="font-size:13px">${esc(r.origin)}</div></div></div>
+      <div class="f"><div class="k">상세 설명 글 <button class="cp" data-cp="${esc(r.detail)}">복사</button></div><div class="v" style="font-size:14px">${esc(r.detail)}</div></div>
+    </div>`).join("") : '<div class="box">해당하는 상품이 없어요.</div>';
+}
+document.addEventListener("click", async (e) => { const b = e.target.closest("[data-cp]"); if (!b) return;
+  try { await navigator.clipboard.writeText(b.dataset.cp); toast("복사했어요"); } catch (x) { prompt("길게 눌러 복사하세요", b.dataset.cp); } });
+document.addEventListener("change", (e) => { const c = e.target.closest("[data-done]"); if (!c) return; let d = LS.get().filter(x => x !== c.dataset.done); if (c.checked) d.push(c.dataset.done); LS.set(d); render(); });
+$("#q").addEventListener("input", render);
+$("#only").addEventListener("click", () => { ONLY = !ONLY; $("#only").classList.toggle("on", ONLY); render(); });
+gviz().then(rows => { const all = rows.filter(c => /^[a-z]\d+$/.test(String(c[0]).trim())).map(build), gi = {}; all.forEach((r, i) => { if (!(r.group in gi)) gi[r.group] = r.group.includes("이벤트") ? -1 : i; });
+  ROWS = all.map((r, i) => [r, i]).sort((x, y) => gi[x[0].group] - gi[y[0].group] || x[1] - y[1]).map(x => x[0]); render(); })
+  .catch(() => { $("#list").innerHTML = '<div class="box">메뉴판을 불러오지 못했어요. 인터넷 연결을 확인하고 새로고침해 주세요.</div>'; });
+</script>
+</body>
+</html>
