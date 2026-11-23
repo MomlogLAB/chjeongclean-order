@@ -631,8 +631,8 @@ function countVisit() {
   try {
     if (!/^https?:/.test(location.protocol) || localStorage.getItem("cj_me")) return;
     const day = ds(kst()); if (localStorage.getItem("cj_cnt_day") === day) return;
-    const kind = localStorage.getItem("cj_cnt_day") ? "back" : "new"; localStorage.setItem("cj_cnt_day", day);
-    fetch(CONFIG.hook.adminList, { method:"POST", headers:{ "Content-Type":"application/json" }, body: JSON.stringify({ action:"visit", kind }), keepalive:true }).catch(() => {});
+    const kind = localStorage.getItem("cj_cnt_ever") ? "back" : "new"; localStorage.setItem("cj_cnt_day", day); localStorage.setItem("cj_cnt_ever", "1");
+    post(CONFIG.hook.adminList, { action:"visit", kind }).catch(() => { try { localStorage.removeItem("cj_cnt_day"); } catch (x) {} });   // 주문 전송과 같은 방식. 실패하면 다음 접속 때 다시 보냄
   } catch (e) {}
 }
 countVisit();
