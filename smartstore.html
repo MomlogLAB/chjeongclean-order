@@ -71,7 +71,7 @@ const PHOTOS = ["b29","b27","b21","b08","b01","b04","b12","b13","b03","b06","b11
 const UNITTXT = { b09:"2팩 (한 팩 120g)", b25:"1.5L 1병", b26:"150g 1개", b18:"1세트 (육수 1.5L + 삶은고기 150g)", b37:"1개", b38:"1개" };
 /* 상품별 설명: [한 줄 소개, 추천 요리] */
 const D = {
-  b39:["등심 특유의 고소한 풍미가 살아 있는 한우 1등급 등심이에요. 1+/1++보다 기름이 적어 담백합니다.","구이, 스테이크"],
+  b39:["등심 특유의 고소한 풍미가 살아 있는 한우 1등급 등심이에요. 1+~1++보다 기름이 적어 담백합니다.","구이, 스테이크"],
   b40:["부드러운 살코기와 적당한 지방이 어우러진 한우 1등급 채끝이에요. 기름기가 부담스러운 분께 잘 맞습니다.","스테이크, 구이"],
   b08:["업진살·부채살·아롱구이 세 가지를 한 번에 맛볼 수 있는 모듬 구이예요. 부위마다 다른 식감을 즐기실 수 있어요.","구이"],
   b01:["등심 앞쪽에서 소량만 나오는 부위로, 촘촘한 마블링과 부드러운 식감이 특징이에요.","구이"],
@@ -139,7 +139,7 @@ let ROWS = [], ONLY = false;
 function build(c) {
   const id = String(c[0]).trim(), group = String(c[1]), raw = String(c[2]), geun = Number(c[4]) || 0, flat = Number(c[5]) || 0, step = STEP[id] || (geun ? 150 : 1), min = MIN[id] || 1;
   const price = geun ? Math.round(geun * step / 600) : flat, name = raw.replace(/\s*\(한정수량\)/, "");
-  const kind = group.includes("1등급") ? "한우 1등급" : group.startsWith("한우") ? "한우 1+/1++" : group.startsWith("한돈") ? "한돈" : "미국산";
+  const kind = group.includes("1등급") ? "한우 1등급" : group.startsWith("한우") ? "한우 1+~1++" : group.startsWith("한돈") ? "한돈" : "미국산";
   const unit = UNITTXT[id] || (geun ? `${step}g` : "1개");
   const sauce = /소스/.test(name), bone = /사골육수|삶은고기/.test(name), core = name.replace(/^1등급 /, "").replace(/^(한우|한돈) /, "");
   const tail = geun ? ` ${step}g` : id === "b09" ? " 2팩" : id === "b18" ? " 세트" : "";
@@ -147,7 +147,7 @@ function build(c) {
   const origin = kind === "미국산" ? "미국산" : /소스/.test(name) ? "재료별 원산지 확인 후 입력" : "국내산";
   const cat = /소스/.test(name) ? "식품 > 소스/드레싱 (가까운 항목)" : /사골육수/.test(name) ? "식품 > 축산물 또는 국/탕 (가까운 항목)" : kind === "미국산" ? "식품 > 축산물 > 수입 쇠고기" : kind === "한돈" ? "식품 > 축산물 > 국내산 돼지고기" : "식품 > 축산물 > 한우";
   const d = D[id] || [String(c[7] || "청정한우에서 그날 손질해 보내드리는 상품이에요."), ""];
-  const grade = bone ? "한우 (국내산)" : kind === "한우 1+/1++" ? "한우 1+/1++ (그날 들어온 소에 따라 1+ 또는 1++)" : kind === "한우 1등급" ? "한우 1등급" : kind === "한돈" ? "한돈 (국내산 돼지고기)" : "미국산 쇠고기";
+  const grade = bone ? "한우 (국내산)" : kind === "한우 1+~1++" ? "한우 1+~1++ (그날 들어온 소에 따라 달라요)" : kind === "한우 1등급" ? "한우 1등급" : kind === "한돈" ? "한돈 (국내산 돼지고기)" : "미국산 쇠고기";
   const lines = [`[청정한우] ${name}`, d[0], "", `· 중량: ${unit}` + (geun ? ` (수량으로 조절해 주세요. 예: ${step * 2}g = 2개)` : ""), /소스/.test(name) ? null : `· 구분: ${grade}`, d[1] ? `· 추천 요리: ${d[1]}` : null,
     min > 1 ? `· 최소 주문: ${min}개 (${step * min}g)부터` : null, /소스|사골육수|삶은고기/.test(name) ? null : "· 손질: 두께·썰기·소분 포장 요청은 배송 메모에 적어주세요.", "· 배송: 디에이치 방배 입주민 전용 · 화/금 오후 4:30~5:30 주문하신 동 무인택배함"].filter(x => x !== null);
   return { id, group, name, title, price, unit, min, step, geun, origin, cat, status: String(c[6] || ""), detail: lines.join("\n"), photo: PHOTOS.includes(id), hasUp: !!String(c[8] || "").trim() };
