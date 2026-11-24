@@ -435,7 +435,7 @@ function applyCatalog(rows) {
 const PH = {};   // id -> { v, d(data URL) }
 const BLANK = "data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==";
 const hasPhoto = (p) => !!p.photoVer || PHOTOS.includes(p.id);
-const photoSrc = (p) => p.photoVer ? (PH[p.id] && PH[p.id].v === p.photoVer ? PH[p.id].d : (PHOTOS.includes(p.id) ? `img/${p.id}.jpg?v=1124` : BLANK)) : `img/${p.id}.jpg?v=1124`;
+const photoSrc = (p) => p.photoVer ? (PH[p.id] && PH[p.id].v === p.photoVer ? PH[p.id].d : (PHOTOS.includes(p.id) ? `img/${p.id}.jpg?v=1125` : BLANK)) : `img/${p.id}.jpg?v=1125`;
 let phBusy = false;
 function loadPhotos() {
   if (phBusy) return;

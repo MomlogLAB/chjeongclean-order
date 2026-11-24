@@ -206,7 +206,7 @@ async function loadSheet() {
 /* 올린 사진 불러오기 (Photos 탭) */
 const PH = {};
 async function photoOf(r) {
-  if (!r.photoVer) return STATIC_PHOTOS.includes(r.id) ? `img/${r.id}.jpg?v=1124` : "";
+  if (!r.photoVer) return STATIC_PHOTOS.includes(r.id) ? `img/${r.id}.jpg?v=1125` : "";
   if (PH[r.id] && PH[r.id].v === r.photoVer) return PH[r.id].d;
   const rows = await gviz("&sheet=Photos&tq=" + encodeURIComponent(`select B,C,D,E,F where A='${r.id}'`));
   const x = rows.find(y => String(y[0]).trim() === r.photoVer); if (!x) return "";
