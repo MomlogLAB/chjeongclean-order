@@ -804,10 +804,10 @@ function smsText(kind, o) {
     if (kind === "paid") return `[청정한우 사다드림] ${o.name}님, 입금 확인됐어요.\n\n발송: ${dayLabel($("#a-batch").value)} 택배 발송\n받는 곳: ${addr}\n\n발송하면 송장번호 알려드릴게요. 주문 감사합니다😍`;
     return `[청정한우 사다드림] ${o.name}님, 오늘 택배로 발송했어요.\n\n송장번호: \n\n신선식품이라 받으시면 바로 냉장 보관해 주세요!`; }
   if (kind === "paid") return `[청정한우 사다드림] ${o.name}님, 입금 확인됐어요.\n\n픽업: ${dayLabel($("#a-batch").value)} ${P.smsTime || P.time}\n장소: ${lockerOf(o.unit)}\n\n\n무인 택배함 세대 비밀번호는 생활지원센터로 문의해주세요.\n택배함 위치는 픽업 때 말씀드릴게요.\n\n주문 감사합니다😍`;
-  const its = (o.items || []).join(" "), raw = /육회|육사시미/.test(its), grill = (o.items || []).some(i => !/^배달비/.test(i) && !/육회|육사시미|소스|사골육수|삶은고기/.test(i));
+  const its = (o.items || []).join(" "), raw = /육회|육사시미/.test(its), beefGrill = PRODUCTS.filter(p => /^한우/.test(p.group) && /구이용|1등급/.test(p.group)).map(p => p.name.replace(/\s*\(한정수량\)/, "")), grill = (o.items || []).some(i => beefGrill.some(n => String(i).trim().startsWith(n)));
   return `[청정한우 사다드림] ${o.name}님, 지금 ${lockerOf(o.unit)}에 넣었어요.\n\n택배함에서 세대 비밀번호를 누르고 찾아가세요. 신선식품이라 최대한 빨리 꺼내 주세요!`
     + (raw ? `\n\n육회·육사시미는 꺼내시면 바로 냉장 보관해 주세요.` : "")
-    + (grill ? `\n\n고기는 80%만 구워 드시면 육즙이 터지면서 더 맛있게 드실 수 있어요.` : "");
+    + (grill ? `\n\n한우는 80%만 구워 드시면 육즙이 터지면서 더 맛있게 드실 수 있어요.` : "");
 }
 function smsLink(kind, o) { return `sms:${telOf(o.phone)}?&body=${encodeURIComponent(smsText(kind, o))}`; }
 // 주문자 옆 표시: 이 회차보다 앞선 회차에 주문한 적이 있으면 재주문 (전화번호 기준)
