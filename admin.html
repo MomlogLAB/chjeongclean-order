@@ -169,7 +169,7 @@ const CFG = {
   hook: "https://hook.us2.make.com/1vqiu1h0djvu4x23fa3kgospq7h9cjwj",            // Make 6번 시나리오 (관리자)
   step: { b09:240, b25:1500, b18:1500, b21:600, b22:600, p15:600, p16:600, u01:600, u02:600 },   // 담는 단위(g), 기본 150
 };
-const STATIC_PHOTOS = ["b29","b27","b21","b08","b01","b04","b12","b13","b03","b06","b11","b19","b09","p01","p02","p03","p12","p13","b39"];   // 사이트에 기본으로 들어 있는 사진
+const STATIC_PHOTOS = ["b29","b27","b21","b08","b01","b04","b12","b13","b03","b06","b11","b19","b09","p01","p02","p03","p12","p13","b39","b23","b30","b28","p11","p04","p23"];   // 사이트에 기본으로 들어 있는 사진
 const $ = (s) => document.querySelector(s);
 const won = (n) => Number(n).toLocaleString("ko-KR") + "원";
 const esc = (t) => String(t).replace(/[&<>"]/g, m => ({ "&":"&amp;", "<":"&lt;", ">":"&gt;", '"':"&quot;" }[m]));
@@ -206,7 +206,7 @@ async function loadSheet() {
 /* 올린 사진 불러오기 (Photos 탭) */
 const PH = {};
 async function photoOf(r) {
-  if (!r.photoVer) return STATIC_PHOTOS.includes(r.id) ? `img/${r.id}.jpg` : "";
+  if (!r.photoVer) return STATIC_PHOTOS.includes(r.id) ? `img/${r.id}.jpg?v=1124` : "";
   if (PH[r.id] && PH[r.id].v === r.photoVer) return PH[r.id].d;
   const rows = await gviz("&sheet=Photos&tq=" + encodeURIComponent(`select B,C,D,E,F where A='${r.id}'`));
   const x = rows.find(y => String(y[0]).trim() === r.photoVer); if (!x) return "";

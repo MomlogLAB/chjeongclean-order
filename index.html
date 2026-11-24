@@ -317,7 +317,7 @@ const CAP_IDS = ["b27","b08","b01","b04","b12","b13"];
 const CAP_TXT = "0.5cm 두께<br>약 200g (±10g)";
 const CAP_OVR = { b08: "0.5cm 두께<br>약 500g (±10g)" }; // 사진별 문구 따로
 const capOf = (id) => CAP_OVR[id] || CAP_TXT;
-const PHOTOS = ["b29","b27","b21","b08","b01","b04","b12","b13","b03","b06","b11","b19","b09","p01","p02","p03","p12","p13","b39"];
+const PHOTOS = ["b29","b27","b21","b08","b01","b04","b12","b13","b03","b06","b11","b19","b09","p01","p02","p03","p12","p13","b39","b23","b30","b28","p11","p04","p23"];
 const PRODUCTS = [
   { id:"b39", group:"한우 1등급 · 박리다매 이벤트 (이번 경매 물량 한정)", name:"1등급 명품등심", price:0, per100:9900, geun:59400 },
   { id:"b40", group:"한우 1등급 · 박리다매 이벤트 (이번 경매 물량 한정)", name:"1등급 채끝등심", price:0, per100:9900, geun:59400 },
@@ -435,7 +435,7 @@ function applyCatalog(rows) {
 const PH = {};   // id -> { v, d(data URL) }
 const BLANK = "data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==";
 const hasPhoto = (p) => !!p.photoVer || PHOTOS.includes(p.id);
-const photoSrc = (p) => p.photoVer ? (PH[p.id] && PH[p.id].v === p.photoVer ? PH[p.id].d : (PHOTOS.includes(p.id) ? `img/${p.id}.jpg` : BLANK)) : `img/${p.id}.jpg`;
+const photoSrc = (p) => p.photoVer ? (PH[p.id] && PH[p.id].v === p.photoVer ? PH[p.id].d : (PHOTOS.includes(p.id) ? `img/${p.id}.jpg?v=1124` : BLANK)) : `img/${p.id}.jpg?v=1124`;
 let phBusy = false;
 function loadPhotos() {
   if (phBusy) return;
