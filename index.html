@@ -714,13 +714,13 @@ $("#lookup").addEventListener("click", async () => {
     let rows = []; try { rows = await r.json(); } catch {}
     rows = expandRows((Array.isArray(rows) ? rows : []).filter(x => x && x.no));
     if (!rows.length) throw new Error("none");
-    const orders = groupOrders(rows).sort((a,b) => String(b.no).localeCompare(String(a.no)));
     const batchOf = (no) => { const x = rows.find(r => r.no === no); return x ? x.batch : ""; };
     const norm = (v) => { const m = String(v||"").match(/(\d{4})\D+(\d{1,2})\D+(\d{1,2})/); return m ? `${m[1]}-${m[2].padStart(2,"0")}-${m[3].padStart(2,"0")}` : ""; };
+    const orders = groupOrders(rows).sort((a,b) => norm(batchOf(b.no)).localeCompare(norm(batchOf(a.no))) || String(b.no).localeCompare(String(a.no)));   // 받는 날 최신순
     $("#q-list").innerHTML = orders.map(o => { const b = norm(batchOf(o.no)); return `
       <div class="card" style="margin-bottom:12px">
         <div style="display:flex;justify-content:space-between;align-items:center"><b style="font-size:17px">${o.no}</b><span class="st ${o.status==="입금"?"paid":o.status==="전달"?"done":""}">${STATUS[o.status]}</span></div>
-        <div style="font-size:14px;margin-top:6px">${b ? (shipUnit(o.unit) ? `택배 발송 <b>${dayLabel(b)}</b> · 발송하면 송장번호를 문자로 알려드려요` : `픽업 <b>${dayLabel(b)}</b> ${CONFIG.pickup.time} · ${CONFIG.pickup.place}`) : ""}</div>
+        <div style="font-size:14px;margin-top:6px">${b ? (shipUnit(o.unit) ? `택배 발송 <b>${dayLabel(b)}</b> · 발송하면 송장번호를 문자로 알려드려요` : `받는 날 <b>${dayLabel(b)}</b> ${CONFIG.pickup.time} · ${CONFIG.pickup.place}`) : ""}</div>
         <div style="font-size:14px;margin-top:4px">${o.items.filter(i => !i.startsWith("배달비")).join(", ")}</div>
         <div style="font-weight:900;margin-top:6px">${won(o.total)}</div>
         ${o.status === "접수" ? `<div style="margin-top:10px;padding-top:10px;border-top:1px solid var(--line)"><div style="font-weight:800;font-size:13px;color:var(--r)">아직 입금 확인 전이에요. 아래 계좌로 입금해 주세요.</div>${acctHtml()}</div>` : ""}
