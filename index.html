@@ -175,7 +175,7 @@
   .price .p100 { font-size:14px; }
   .price small.geun { display:block; font-size:12px; font-weight:700; color:var(--grey); }
   .bdg { display:inline-block; font-size:11px; font-weight:900; padding:2px 7px; border-radius:20px; margin-left:6px; vertical-align:middle; }
-  .bdg.rs { background:#FFF1CC; color:#8A5A00; } .bdg.so { background:#ECECEC; color:#666; }
+  .bdg.rs { background:#FFF1CC; color:#8A5A00; } .bdg.us { background:#E8F1EC; color:#17352A; } .bdg.us.bo { background:#F6E9D8; color:#8A4B12; } .bdg.so { background:#ECECEC; color:#666; }
   .rnote { font-size:12px; font-weight:700; color:#8A5A00; margin-top:2px; }
   .item.soldout .thumb, .item.soldout .info { opacity:.45; }
   .item.soldout .step button { border-color:#CCC; color:#BBB; background:#F4F4F4; }
@@ -377,6 +377,15 @@ const PRODUCTS = [
   { id:"u01", group:"LA갈비 · 미국산", name:"LA갈비 찜용", price:0, per100:4800, geun:28800 },
   { id:"u02", group:"LA갈비 · 미국산", name:"LA갈비 탕용", price:0, per100:4800, geun:28800 },
 ];
+/* 구이용 / 수육·보쌈용으로 나눠 담는 품목: 같은 가격·재고·사진을 쓰고 주문서에는 용도가 따로 적힘 */
+const USE_IDS = ["p01","p02","p03","p12","p13","p05","p24"];
+USE_IDS.forEach(id => { const i = PRODUCTS.findIndex(p => p.id === id); if (i < 0) return; const b = PRODUCTS[i];
+  b.use = "구이용"; b.label = b.name;
+  const m = b.name.match(/^(.*?)(\s*\(.*\))?$/);
+  PRODUCTS.splice(i + 1, 0, { ...b, id: id + "s", src: id, use: "수육·보쌈용", label: b.name, name: `${m[1]} 수육·보쌈용${m[2] || ""}` }); });
+const PB = (p) => p.src ? PRODUCTS.find(x => x.id === p.src) : p;   // 사진·메뉴판 값은 원래 품목 것을 씀
+function syncUse() { PRODUCTS.forEach(p => { if (!p.src) return; const b = PB(p); ["geun","per100","price","status","flat"].forEach(k => { p[k] = b[k]; }); p.note = ""; p.photoVer = ""; }); }
+
 const GROUP_NOTE = {
   "한우 1등급 · 박리다매 이벤트 (이번 경매 물량 한정)": "이 가격은 이번 물량 한정 금액입니다 · 300g부터 주문 · 물량이 소진되면 조기 마감돼요 · 11월 감사 서비스와 중복 적용되지 않아요.",
   "한우 1+/1++ · 구이용": "등급은 그날 들어온 소에 따라 1+ 또는 1++. 스테이크, 구이용 원하시는 두께는 요청사항에 적어주세요.",
@@ -428,14 +437,15 @@ function applyCatalog(rows) {
     p.photoVer = String(c[8] || "").trim();   // 사장님 페이지에서 올린 사진이 있으면 버전 값이 들어 있음
     n++;
   });
+  syncUse();
   if (n) CATALOG_AT = Date.now();
   return n > 0;
 }
 /* 사장님 페이지에서 올린 사진 (메뉴판 시트 Photos 탭에 나눠 저장) */
 const PH = {};   // id -> { v, d(data URL) }
 const BLANK = "data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==";
-const hasPhoto = (p) => !!p.photoVer || PHOTOS.includes(p.id);
-const photoSrc = (p) => p.photoVer ? (PH[p.id] && PH[p.id].v === p.photoVer ? PH[p.id].d : (PHOTOS.includes(p.id) ? `img/${p.id}.jpg?v=1125` : BLANK)) : `img/${p.id}.jpg?v=1125`;
+const hasPhoto = (q) => { const p = PB(q); return !!p.photoVer || PHOTOS.includes(p.id); };
+const photoSrc = (q) => { const p = PB(q); return p.photoVer ? (PH[p.id] && PH[p.id].v === p.photoVer ? PH[p.id].d : (PHOTOS.includes(p.id) ? `img/${p.id}.jpg?v=1125` : BLANK)) : `img/${p.id}.jpg?v=1125`; };
 let phBusy = false;
 function loadPhotos() {
   if (phBusy) return;
@@ -562,9 +572,9 @@ function render() {
   let lastG = "";
   $("#items").innerHTML = PRODUCTS.map(p => (p.group !== lastG ? (lastG = p.group, `<div class="ghead">${p.group}${GROUP_NOTE[p.group] ? `<small>${GROUP_NOTE[p.group]}</small>` : ""}</div>`) : "") + `
     <div class="item${p.status === "품절" ? " soldout" : ""}">
-      ${hasPhoto(p) ? `<div class="tcol"><button class="thumb" data-zoom="${p.id}" aria-label="${p.name} 사진 크게 보기"><img src="${photoSrc(p)}" data-pid="${p.id}" alt="${p.name}" loading="lazy"></button>${CAP_IDS.includes(p.id) ? `<small class="tcap">${capOf(p.id)}</small>` : ""}</div>` : ""}
+      ${hasPhoto(p) ? `<div class="tcol"><button class="thumb" data-zoom="${p.id}" aria-label="${p.name} 사진 크게 보기"><img src="${photoSrc(p)}" data-pid="${PB(p).id}" alt="${p.name}" loading="lazy"></button>${CAP_IDS.includes(p.id) ? `<small class="tcap">${capOf(p.id)}</small>` : ""}</div>` : ""}
       <div class="info">
-        <div class="name">${p.name}${p.status === "예약" ? '<span class="bdg rs">예약</span>' : p.status === "품절" ? '<span class="bdg so">품절</span>' : ""}</div>${p.note ? `<div class="inote">${esc(p.note)}</div>` : ""}${p.status === "예약" ? '<div class="rnote">예약 상품 · 입고되면 안내드려요</div>' : ""}
+        <div class="name">${p.use ? `${p.label}<span class="bdg us${p.src ? " bo" : ""}">${p.use}</span>` : p.name}${p.status === "예약" ? '<span class="bdg rs">예약</span>' : p.status === "품절" ? '<span class="bdg so">품절</span>' : ""}</div>${p.src ? `<div class="inote">주문하신 양만큼 한 덩어리로 드려요</div>` : p.note && !(p.use && /보쌈|수육/.test(p.note)) ? `<div class="inote">${esc(p.note)}</div>` : ""}${p.status === "예약" ? '<div class="rnote">예약 상품 · 입고되면 안내드려요</div>' : ""}
         <div class="price">${p.geun ? `<span class="p100">100g ${won(p.per100)}${p.flat ? ` + ${won(p.flat)}` : ""}</span><small class="geun">${p.flat ? `양에 상관없이 ${won(p.flat)} 추가` : `1근 ${won(p.geun)}`}</small>` : p.price ? won(p.price) : '<span class="sise">시세 · 주문 후 금액 안내</span>'}</div>
       </div>
       <div class="step">
@@ -590,7 +600,7 @@ document.addEventListener("click", async (e) => {
   if (cp) { try { await navigator.clipboard.writeText(CONFIG.bankAccount); cp.textContent = "복사됨"; setTimeout(() => cp.textContent = "계좌 복사", 1500); } catch { prompt("계좌번호를 복사하세요", CONFIG.bankAccount); } return; }
   const z = e.target.closest("[data-zoom]");
   if (z) { const p = PRODUCTS.find(x => x.id === z.dataset.zoom); const d = document.createElement("div"); d.className = "zoom";
-    d.innerHTML = `<img src="${photoSrc(p)}" data-pid="${p.id}" alt="${p.name}"><p>${p.name}${CAP_IDS.includes(p.id) ? ` · ${capOf(p.id).replace("<br>"," · ")}` : ""}<br><small style="font-weight:400">눌러서 닫기</small></p>`; d.addEventListener("click", () => d.remove()); document.body.appendChild(d); return; }
+    d.innerHTML = `<img src="${photoSrc(p)}" data-pid="${PB(p).id}" alt="${p.name}"><p>${p.name}${CAP_IDS.includes(p.id) ? ` · ${capOf(p.id).replace("<br>"," · ")}` : ""}<br><small style="font-weight:400">눌러서 닫기</small></p>`; d.addEventListener("click", () => d.remove()); document.body.appendChild(d); return; }
   const b = e.target.closest("[data-id]"); if (!b) return;
   const id = b.dataset.id, d = Number(b.dataset.d);
   const pp = PRODUCTS.find(x => x.id === id); if (pp.status === "품절") return;
